@@ -62,6 +62,37 @@
         display: inline-flex;
         position: relative;
         padding-block: 0.08em;
+        isolation: isolate;
+      }
+
+      .word::before {
+        content: "";
+        position: absolute;
+        inset: -0.12em -0.18em;
+        border-radius: 999px;
+        background:
+          radial-gradient(
+            circle at 30% 50%,
+            rgba(70, 145, 255, 0.34),
+            transparent 58%
+          ),
+          radial-gradient(
+            circle at 72% 46%,
+            rgba(185, 86, 255, 0.3),
+            transparent 62%
+          );
+        filter: blur(18px);
+        opacity: 0;
+        transform: scale(0.72);
+        transition:
+          opacity 360ms ease,
+          transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
+        z-index: -1;
+      }
+
+      .word:hover::before {
+        opacity: 1;
+        transform: scale(1);
       }
 
       .letter {
@@ -75,42 +106,42 @@
       }
 
       .word:hover .letter {
-        opacity: 0.94;
+        opacity: 0.96;
       }
 
       .word:hover .letter:nth-child(1) {
-        transform: translate3d(calc(var(--spread) * -1), -18px, 0)
-          rotate(-8deg);
+        transform: translate3d(calc(var(--spread) * -0.22), -6px, 0)
+          rotate(-2deg);
       }
 
       .word:hover .letter:nth-child(2) {
-        transform: translate3d(calc(var(--spread) * -0.42), 16px, 0)
-          rotate(7deg);
+        transform: translate3d(calc(var(--spread) * -0.08), 5px, 0)
+          rotate(2deg);
       }
 
       .word:hover .letter:nth-child(3) {
-        transform: translate3d(calc(var(--spread) * 0.22), -22px, 0)
-          rotate(-5deg);
+        transform: translate3d(calc(var(--spread) * 0.08), -7px, 0)
+          rotate(-1.5deg);
       }
 
       .word:hover .letter:nth-child(4) {
-        transform: translate3d(calc(var(--spread) * 0.62), 20px, 0)
-          rotate(5deg);
+        transform: translate3d(calc(var(--spread) * 0.22), 6px, 0)
+          rotate(1.5deg);
       }
 
       .word:hover .letter:nth-child(5) {
-        transform: translate3d(calc(var(--spread) * 0.96), -16px, 0)
-          rotate(-6deg);
+        transform: translate3d(calc(var(--spread) * 0.32), -5px, 0)
+          rotate(-2deg);
       }
 
       .word:hover .letter:nth-child(6) {
-        transform: translate3d(calc(var(--spread) * 1.26), 17px, 0)
-          rotate(6deg);
+        transform: translate3d(calc(var(--spread) * 0.4), 5px, 0)
+          rotate(2deg);
       }
 
       .word:hover .letter:nth-child(7) {
-        transform: translate3d(calc(var(--spread) * 1.48), -12px, 0)
-          rotate(-4deg);
+        transform: translate3d(calc(var(--spread) * 0.46), -4px, 0)
+          rotate(-1.5deg);
       }
 
       @keyframes title-in {
