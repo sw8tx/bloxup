@@ -36,41 +36,188 @@
         min-height: 100svh;
         display: grid;
         place-items: center;
+        overflow: hidden;
         padding: 24px;
-        background: #ffffff;
+        background:
+          radial-gradient(
+            circle at 50% 50%,
+            rgba(155, 92, 255, 0.14),
+            transparent 34%
+          ),
+          #ffffff;
       }
 
-      .home h1 {
+      .sparkle-stage {
+        position: relative;
+        display: grid;
+        place-items: center;
+        isolation: isolate;
+      }
+
+      .sparkle-stage::before {
+        content: "";
+        position: absolute;
+        width: min(92vw, 760px);
+        aspect-ratio: 1;
+        border-radius: 999px;
+        background: conic-gradient(
+          from 0deg,
+          transparent,
+          rgba(155, 92, 255, 0.42),
+          transparent,
+          rgba(0, 220, 255, 0.36),
+          transparent
+        );
+        filter: blur(34px);
+        opacity: 0;
+        transform: scale(0.45) rotate(0deg);
+        animation: burst-ring 2.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+        z-index: -2;
+      }
+
+      .sparkle-stage::after {
+        content: "";
+        position: absolute;
+        width: min(84vw, 680px);
+        height: 160px;
+        background: linear-gradient(
+          105deg,
+          transparent 24%,
+          rgba(255, 255, 255, 0.95) 46%,
+          rgba(155, 92, 255, 0.5) 50%,
+          rgba(255, 255, 255, 0.95) 54%,
+          transparent 76%
+        );
+        mix-blend-mode: screen;
+        transform: translateX(-120%) skewX(-16deg);
+        animation: light-sweep 2.1s ease-in-out infinite 1.05s;
+        z-index: 2;
+        pointer-events: none;
+      }
+
+      .sparkle-stage h1 {
+        position: relative;
         margin: 0;
         color: transparent;
-        background: linear-gradient(90deg, #111111, #9b5cff, #111111);
-        background-size: 220% 100%;
+        background: linear-gradient(
+          90deg,
+          #050505 0%,
+          #7c24ff 28%,
+          #00c8ff 50%,
+          #ff4fd8 72%,
+          #050505 100%
+        );
+        background-size: 260% 100%;
         background-clip: text;
         -webkit-background-clip: text;
-        font-size: clamp(2.5rem, 8vw, 6rem);
-        font-weight: 600;
-        line-height: 1;
+        font-size: clamp(3rem, 10vw, 8.5rem);
+        font-weight: 800;
+        line-height: 0.95;
         text-align: center;
+        text-shadow:
+          0 0 22px rgba(155, 92, 255, 0.36),
+          0 0 54px rgba(0, 200, 255, 0.22);
         animation:
-          rise-in 900ms ease-out both,
-          sparkle-shine 2.8s ease-in-out infinite 900ms;
+          text-smash 950ms cubic-bezier(0.16, 1, 0.3, 1) both,
+          neon-pulse 1.7s ease-in-out infinite 950ms,
+          gradient-rush 2.4s ease-in-out infinite 950ms;
       }
 
-      @keyframes rise-in {
-        from {
+      .sparkle-stage h1::before {
+        content: attr(data-text);
+        position: absolute;
+        inset: 0;
+        color: transparent;
+        -webkit-text-stroke: 2px rgba(155, 92, 255, 0.5);
+        filter: blur(12px);
+        transform: scale(1.04);
+        z-index: -1;
+        animation: aura-pop 1.4s ease-out infinite alternate;
+      }
+
+      .spark {
+        position: absolute;
+        width: 12px;
+        aspect-ratio: 1;
+        background: #ffffff;
+        border-radius: 2px;
+        box-shadow:
+          0 0 0 2px rgba(255, 255, 255, 0.9),
+          0 0 18px rgba(155, 92, 255, 0.9),
+          0 0 34px rgba(0, 200, 255, 0.72);
+        transform: rotate(45deg) scale(0);
+        animation: spark-pop 1.65s ease-in-out infinite;
+      }
+
+      .spark-1 {
+        top: -28%;
+        left: 8%;
+        animation-delay: 150ms;
+      }
+
+      .spark-2 {
+        top: -16%;
+        right: 14%;
+        animation-delay: 420ms;
+      }
+
+      .spark-3 {
+        top: 18%;
+        left: -7%;
+        animation-delay: 700ms;
+      }
+
+      .spark-4 {
+        right: -6%;
+        bottom: 12%;
+        animation-delay: 960ms;
+      }
+
+      .spark-5 {
+        bottom: -26%;
+        left: 22%;
+        animation-delay: 1.18s;
+      }
+
+      .spark-6 {
+        right: 28%;
+        bottom: -22%;
+        animation-delay: 1.34s;
+      }
+
+      .spark-7 {
+        top: 50%;
+        left: 16%;
+        animation-delay: 1.5s;
+      }
+
+      .spark-8 {
+        top: 42%;
+        right: 18%;
+        animation-delay: 1.68s;
+      }
+
+      @keyframes text-smash {
+        0% {
           opacity: 0;
-          transform: translateY(18px) scale(0.98);
-          filter: blur(6px);
+          transform: translateY(42px) scale(0.72) rotateX(18deg);
+          filter: blur(14px);
         }
 
-        to {
+        58% {
+          opacity: 1;
+          transform: translateY(-8px) scale(1.08) rotateX(0deg);
+          filter: blur(0);
+        }
+
+        100% {
           opacity: 1;
           transform: translateY(0) scale(1);
           filter: blur(0);
         }
       }
 
-      @keyframes sparkle-shine {
+      @keyframes gradient-rush {
         0%,
         100% {
           background-position: 0% 50%;
@@ -80,12 +227,115 @@
           background-position: 100% 50%;
         }
       }
+
+      @keyframes neon-pulse {
+        0%,
+        100% {
+          filter: drop-shadow(0 0 12px rgba(155, 92, 255, 0.38));
+        }
+
+        50% {
+          filter: drop-shadow(0 0 34px rgba(0, 200, 255, 0.62));
+        }
+      }
+
+      @keyframes aura-pop {
+        from {
+          opacity: 0.3;
+          transform: scale(1.02);
+        }
+
+        to {
+          opacity: 0.85;
+          transform: scale(1.08);
+        }
+      }
+
+      @keyframes burst-ring {
+        0% {
+          opacity: 0;
+          transform: scale(0.38) rotate(0deg);
+        }
+
+        35% {
+          opacity: 0.85;
+        }
+
+        100% {
+          opacity: 0.42;
+          transform: scale(1) rotate(180deg);
+        }
+      }
+
+      @keyframes light-sweep {
+        0% {
+          transform: translateX(-120%) skewX(-16deg);
+          opacity: 0;
+        }
+
+        18%,
+        68% {
+          opacity: 1;
+        }
+
+        100% {
+          transform: translateX(120%) skewX(-16deg);
+          opacity: 0;
+        }
+      }
+
+      @keyframes spark-pop {
+        0%,
+        100% {
+          opacity: 0;
+          transform: translate3d(0, 16px, 0) rotate(45deg) scale(0);
+        }
+
+        22% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) rotate(45deg) scale(1.15);
+        }
+
+        52% {
+          opacity: 1;
+          transform: translate3d(0, -14px, 0) rotate(135deg) scale(0.82);
+        }
+
+        78% {
+          opacity: 0;
+          transform: translate3d(0, -32px, 0) rotate(225deg) scale(0.2);
+        }
+      }
+
+      @media (prefers-reduced-motion: reduce) {
+        .sparkle-stage::before,
+        .sparkle-stage::after,
+        .sparkle-stage h1,
+        .sparkle-stage h1::before,
+        .spark {
+          animation: none;
+        }
+
+        .spark {
+          display: none;
+        }
+      }
     </style>
   </head>
   <body>
     <div id="root">
       <main class="home">
-        <h1>made by Sparkle</h1>
+        <div class="sparkle-stage" aria-label="made by Sparkle">
+          <h1 data-text="made by Sparkle">made by Sparkle</h1>
+          <span class="spark spark-1"></span>
+          <span class="spark spark-2"></span>
+          <span class="spark spark-3"></span>
+          <span class="spark spark-4"></span>
+          <span class="spark spark-5"></span>
+          <span class="spark spark-6"></span>
+          <span class="spark spark-7"></span>
+          <span class="spark spark-8"></span>
+        </div>
       </main>
     </div>
     <script type="module" src="/src/main.jsx"></script>
