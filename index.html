@@ -41,107 +41,46 @@
         background: #ffffff;
       }
 
-      .split-title {
-        --spread: clamp(10px, 1.65vw, 28px);
+      .kinetic-title {
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 0.23em;
         margin: 0;
         color: #111111;
         font-size: clamp(3rem, 10vw, 8.5rem);
         font-weight: 760;
         line-height: 0.95;
         letter-spacing: -0.045em;
-        cursor: default;
         user-select: none;
+        touch-action: none;
         animation: title-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
       }
 
-      .word {
-        display: inline-flex;
-        position: relative;
-        padding-block: 0.08em;
-        isolation: isolate;
-      }
-
-      .word::before {
-        content: "";
-        position: absolute;
-        inset: -0.12em -0.18em;
-        border-radius: 999px;
-        background:
-          radial-gradient(
-            circle at 30% 50%,
-            rgba(70, 145, 255, 0.34),
-            transparent 58%
-          ),
-          radial-gradient(
-            circle at 72% 46%,
-            rgba(185, 86, 255, 0.3),
-            transparent 62%
-          );
-        filter: blur(18px);
-        opacity: 0;
-        transform: scale(0.72);
-        transition:
-          opacity 360ms ease,
-          transform 520ms cubic-bezier(0.16, 1, 0.3, 1);
-        z-index: -1;
-      }
-
-      .word:hover::before {
-        opacity: 1;
-        transform: scale(1);
-      }
-
-      .letter {
+      .letter,
+      .space {
         display: inline-block;
-        transform: translate3d(0, 0, 0) rotate(0deg);
         transition:
-          transform 520ms cubic-bezier(0.16, 1, 0.3, 1),
-          opacity 260ms ease;
-        transition-delay: calc(var(--i) * 18ms);
+          transform 260ms cubic-bezier(0.16, 1, 0.3, 1),
+          opacity 180ms ease;
         will-change: transform;
       }
 
-      .word:hover .letter {
-        opacity: 0.96;
+      .letter {
+        cursor: grab;
+        padding: 0.04em 0.01em 0.12em;
       }
 
-      .word:hover .letter:nth-child(1) {
-        transform: translate3d(calc(var(--spread) * -0.22), -6px, 0)
-          rotate(-2deg);
+      .letter:active {
+        cursor: grabbing;
       }
 
-      .word:hover .letter:nth-child(2) {
-        transform: translate3d(calc(var(--spread) * -0.08), 5px, 0)
-          rotate(2deg);
+      .letter[data-active="true"] {
+        opacity: 0.92;
       }
 
-      .word:hover .letter:nth-child(3) {
-        transform: translate3d(calc(var(--spread) * 0.08), -7px, 0)
-          rotate(-1.5deg);
-      }
-
-      .word:hover .letter:nth-child(4) {
-        transform: translate3d(calc(var(--spread) * 0.22), 6px, 0)
-          rotate(1.5deg);
-      }
-
-      .word:hover .letter:nth-child(5) {
-        transform: translate3d(calc(var(--spread) * 0.32), -5px, 0)
-          rotate(-2deg);
-      }
-
-      .word:hover .letter:nth-child(6) {
-        transform: translate3d(calc(var(--spread) * 0.4), 5px, 0)
-          rotate(2deg);
-      }
-
-      .word:hover .letter:nth-child(7) {
-        transform: translate3d(calc(var(--spread) * 0.46), -4px, 0)
-          rotate(-1.5deg);
+      .space {
+        width: 0.24em;
+        pointer-events: none;
       }
 
       @keyframes title-in {
@@ -157,16 +96,15 @@
       }
 
       @media (max-width: 620px) {
-        .split-title {
-          --spread: 9px;
-          gap: 0.18em;
+        .kinetic-title {
           font-size: clamp(2.7rem, 13vw, 4.5rem);
         }
       }
 
       @media (prefers-reduced-motion: reduce) {
-        .split-title,
-        .letter {
+        .kinetic-title,
+        .letter,
+        .space {
           animation: none;
           transition: none;
         }
@@ -176,29 +114,94 @@
   <body>
     <div id="root">
       <main class="home">
-        <h1 class="split-title" aria-label="made by Sparkle">
-          <span class="word" aria-hidden="true">
-            <span class="letter" style="--i: 0">m</span>
-            <span class="letter" style="--i: 1">a</span>
-            <span class="letter" style="--i: 2">d</span>
-            <span class="letter" style="--i: 3">e</span>
-          </span>
-          <span class="word" aria-hidden="true">
-            <span class="letter" style="--i: 0">b</span>
-            <span class="letter" style="--i: 1">y</span>
-          </span>
-          <span class="word" aria-hidden="true">
-            <span class="letter" style="--i: 0">S</span>
-            <span class="letter" style="--i: 1">p</span>
-            <span class="letter" style="--i: 2">a</span>
-            <span class="letter" style="--i: 3">r</span>
-            <span class="letter" style="--i: 4">k</span>
-            <span class="letter" style="--i: 5">l</span>
-            <span class="letter" style="--i: 6">e</span>
-          </span>
+        <h1 class="kinetic-title" aria-label="made by Sparkle">
+          <span class="letter" data-index="0">m</span>
+          <span class="letter" data-index="1">a</span>
+          <span class="letter" data-index="2">d</span>
+          <span class="letter" data-index="3">e</span>
+          <span class="space" data-index="4">&nbsp;</span>
+          <span class="letter" data-index="5">b</span>
+          <span class="letter" data-index="6">y</span>
+          <span class="space" data-index="7">&nbsp;</span>
+          <span class="letter" data-index="8">S</span>
+          <span class="letter" data-index="9">p</span>
+          <span class="letter" data-index="10">a</span>
+          <span class="letter" data-index="11">r</span>
+          <span class="letter" data-index="12">k</span>
+          <span class="letter" data-index="13">l</span>
+          <span class="letter" data-index="14">e</span>
         </h1>
       </main>
     </div>
+    <script>
+      const title = document.querySelector(".kinetic-title")
+      const letters = [...document.querySelectorAll(".letter")]
+      const positions = new Map()
+      let activeIndex = null
+      let dragging = null
+
+      function render() {
+        letters.forEach((letter) => {
+          const index = Number(letter.dataset.index)
+          const stored = positions.get(index) || { x: 0, y: 0 }
+          const distance =
+            activeIndex === null ? Number.POSITIVE_INFINITY : Math.abs(activeIndex - index)
+          const lift = distance === 0 ? -24 : distance === 1 ? -12 : 0
+          const rotate = distance === 0 ? -4 : distance === 1 ? 3 : 0
+
+          letter.dataset.active = distance <= 1
+          letter.style.transform = `translate3d(${stored.x}px, ${
+            stored.y + lift
+          }px, 0) rotate(${rotate}deg)`
+        })
+      }
+
+      letters.forEach((letter) => {
+        letter.addEventListener("pointerenter", () => {
+          activeIndex = Number(letter.dataset.index)
+          render()
+        })
+
+        letter.addEventListener("pointerdown", (event) => {
+          const index = Number(letter.dataset.index)
+          const origin = positions.get(index) || { x: 0, y: 0 }
+
+          letter.setPointerCapture(event.pointerId)
+          dragging = {
+            index,
+            startX: event.clientX,
+            startY: event.clientY,
+            origin,
+          }
+        })
+      })
+
+      title.addEventListener("pointermove", (event) => {
+        if (!dragging) {
+          return
+        }
+
+        positions.set(dragging.index, {
+          x: dragging.origin.x + event.clientX - dragging.startX,
+          y: dragging.origin.y + event.clientY - dragging.startY,
+        })
+        render()
+      })
+
+      title.addEventListener("pointerup", () => {
+        dragging = null
+      })
+
+      title.addEventListener("pointercancel", () => {
+        dragging = null
+      })
+
+      title.addEventListener("pointerleave", () => {
+        activeIndex = null
+        dragging = null
+        render()
+      })
+    </script>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>
