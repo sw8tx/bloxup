@@ -3,7 +3,7 @@ import './App.css'
 function App() {
   return (
     <main className="home">
-      <h1>Made by Sparkle</h1>
+      <h1>made by Sparkle</h1>
     </main>
   )
 }
