@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" role="img" aria-labelledby="title">
-  <title id="title">bloxup.shop rocket icon</title>
+  <title id="title">bloxup.shop rocket logo</title>
   <defs>
     <linearGradient id="body" x1="35" x2="95" y1="95" y2="22" gradientUnits="userSpaceOnUse">
       <stop stop-color="#09b927"/>
@@ -23,6 +23,7 @@
   <path fill="url(#fin)" d="M37 70h20v17H43v9H29V83h8z"/>
   <path fill="url(#fin)" d="M72 92h15v15H76v11H61v-14h11z"/>
   <path fill="#050805" d="M79 34h17v8h8v13h-8V43H79zM69 47h17v8H69zM48 70h12v9H48z"/>
+  <path fill="#dfffe6" d="M78 44h18v18H78z"/>
   <path fill="#050805" d="M74 40h26v8h4v10h-4v8H74v-8h-4V48h4z"/>
   <path fill="#f8fff9" d="M80 47h15v14H80z"/>
   <path fill="#9dff8f" d="M60 53h9v8h-9zM52 64h8v14h-8zM82 25h12v6H82zM72 35h10v6H72zM64 43h8v7h-8z"/>

@@ -41,43 +41,51 @@ function App() {
   }
 
   return (
-    <main className="home">
-      <h1
-        className="kinetic-title"
-        aria-label={text}
-        onPointerMove={moveDrag}
-        onPointerUp={stopDrag}
-        onPointerCancel={stopDrag}
-        onPointerLeave={() => {
-          setActiveIndex(null)
-          stopDrag()
-        }}
-      >
-        {letters.map(({ character, index }) => {
-          const offset = positions[index] ?? { x: 0, y: 0 }
-          const distance =
-            activeIndex === null ? Number.POSITIVE_INFINITY : Math.abs(activeIndex - index)
-          const lift = distance === 0 ? -24 : distance === 1 ? -12 : 0
-          const rotate = distance === 0 ? -4 : distance === 1 ? 3 : 0
+    <>
+      <header className="topbar" aria-label="Bloxup navigation">
+        <a className="brand" href="/" aria-label="bloxup.shop home">
+          <img className="brand-logo" src="/logo.svg" alt="" />
+          <span className="brand-name">bloxup.shop</span>
+        </a>
+      </header>
+      <main className="home">
+        <h1
+          className="kinetic-title"
+          aria-label={text}
+          onPointerMove={moveDrag}
+          onPointerUp={stopDrag}
+          onPointerCancel={stopDrag}
+          onPointerLeave={() => {
+            setActiveIndex(null)
+            stopDrag()
+          }}
+        >
+          {letters.map(({ character, index }) => {
+            const offset = positions[index] ?? { x: 0, y: 0 }
+            const distance =
+              activeIndex === null ? Number.POSITIVE_INFINITY : Math.abs(activeIndex - index)
+            const lift = distance === 0 ? -24 : distance === 1 ? -12 : 0
+            const rotate = distance === 0 ? -4 : distance === 1 ? 3 : 0
 
-          return (
-            <span
-              className={character === ' ' ? 'space' : 'letter'}
-              aria-hidden="true"
-              data-active={distance <= 1}
-              onPointerEnter={() => setActiveIndex(index)}
-              onPointerDown={(event) => startDrag(event, index)}
-              style={{
-                transform: `translate3d(${offset.x}px, ${offset.y + lift}px, 0) rotate(${rotate}deg)`,
-              }}
-              key={`${character}-${index}`}
-            >
-              {character === ' ' ? '\u00a0' : character}
-            </span>
-          )
-        })}
-      </h1>
-    </main>
+            return (
+              <span
+                className={character === ' ' ? 'space' : 'letter'}
+                aria-hidden="true"
+                data-active={distance <= 1}
+                onPointerEnter={() => setActiveIndex(index)}
+                onPointerDown={(event) => startDrag(event, index)}
+                style={{
+                  transform: `translate3d(${offset.x}px, ${offset.y + lift}px, 0) rotate(${rotate}deg)`,
+                }}
+                key={`${character}-${index}`}
+              >
+                {character === ' ' ? '\u00a0' : character}
+              </span>
+            )
+          })}
+        </h1>
+      </main>
+    </>
   )
 }
 
