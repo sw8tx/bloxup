@@ -42,11 +42,43 @@
 
       .home h1 {
         margin: 0;
-        color: #111111;
+        color: transparent;
+        background: linear-gradient(90deg, #111111, #9b5cff, #111111);
+        background-size: 220% 100%;
+        background-clip: text;
+        -webkit-background-clip: text;
         font-size: clamp(2.5rem, 8vw, 6rem);
         font-weight: 600;
         line-height: 1;
         text-align: center;
+        animation:
+          rise-in 900ms ease-out both,
+          sparkle-shine 2.8s ease-in-out infinite 900ms;
+      }
+
+      @keyframes rise-in {
+        from {
+          opacity: 0;
+          transform: translateY(18px) scale(0.98);
+          filter: blur(6px);
+        }
+
+        to {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+          filter: blur(0);
+        }
+      }
+
+      @keyframes sparkle-shine {
+        0%,
+        100% {
+          background-position: 0% 50%;
+        }
+
+        50% {
+          background-position: 100% 50%;
+        }
       }
     </style>
   </head>
