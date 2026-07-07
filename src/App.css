@@ -30,6 +30,8 @@
   height: 52px;
   display: block;
   object-fit: contain;
+  transform-origin: center;
+  animation: logo-spin 4200ms linear infinite;
 }
 
 .brand-name {
@@ -48,6 +50,9 @@
 }
 
 .kinetic-title {
+  --tilt-x: 15deg;
+  --tilt-y: -10deg;
+  --lift: 0px;
   position: relative;
   display: flex;
   justify-content: center;
@@ -59,8 +64,9 @@
   line-height: 0.95;
   letter-spacing: 0;
   user-select: none;
-  transform: rotateX(15deg) rotateY(-10deg) rotateZ(-1deg);
+  transform: translateY(calc(var(--lift) * -1)) rotateX(var(--tilt-x)) rotateY(var(--tilt-y)) rotateZ(-1deg);
   transform-style: preserve-3d;
+  transition: transform 140ms ease-out;
   animation: title-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
 }
 
@@ -106,6 +112,12 @@
   }
 }
 
+@keyframes logo-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
 @media (max-width: 620px) {
   .topbar {
     height: 62px;
@@ -128,8 +140,9 @@
   }
 
   .kinetic-title {
+    --tilt-x: 13deg;
+    --tilt-y: -5deg;
     font-size: clamp(1.9rem, 8.8vw, 2.9rem);
-    transform: rotateX(13deg) rotateY(-5deg) rotateZ(-1deg);
   }
 
   .letter {
@@ -146,6 +159,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .kinetic-title,
+  .brand-logo,
   .letter {
     animation: none;
     transition: none;
