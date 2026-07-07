@@ -46,6 +46,7 @@
 }
 
 .kinetic-title {
+  position: relative;
   display: flex;
   justify-content: center;
   align-items: center;
@@ -58,6 +59,30 @@
   user-select: none;
   touch-action: none;
   animation: title-in 720ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+.kinetic-title::after {
+  position: absolute;
+  inset: 0;
+  content: attr(aria-label);
+  pointer-events: none;
+  color: transparent;
+  background-image: linear-gradient(
+    108deg,
+    transparent 0%,
+    transparent 36%,
+    rgba(107, 255, 115, 0.72) 43%,
+    #ffffff 47%,
+    rgba(50, 245, 66, 0.84) 51%,
+    transparent 58%,
+    transparent 100%
+  );
+  background-size: 240% 100%;
+  background-position: 140% 0;
+  background-clip: text;
+  -webkit-background-clip: text;
+  text-shadow: 0 0 18px rgba(50, 245, 66, 0.28);
+  animation: shine-sweep 2600ms ease-in-out 620ms infinite;
 }
 
 .letter,
@@ -99,6 +124,21 @@
   }
 }
 
+@keyframes shine-sweep {
+  0%,
+  18% {
+    background-position: 140% 0;
+  }
+
+  55% {
+    background-position: -140% 0;
+  }
+
+  100% {
+    background-position: -140% 0;
+  }
+}
+
 @media (max-width: 620px) {
   .topbar {
     height: 62px;
@@ -129,5 +169,9 @@
   .space {
     animation: none;
     transition: none;
+  }
+
+  .kinetic-title::after {
+    content: none;
   }
 }
