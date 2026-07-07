@@ -31,7 +31,7 @@
   display: block;
   object-fit: contain;
   transform-origin: center;
-  animation: logo-spin 4200ms linear infinite;
+  animation: logo-slide 1800ms ease-in-out infinite;
 }
 
 .brand-name {
@@ -112,9 +112,14 @@
   }
 }
 
-@keyframes logo-spin {
-  to {
-    transform: rotate(360deg);
+@keyframes logo-slide {
+  0%,
+  100% {
+    transform: translateX(0) rotate(-7deg);
+  }
+
+  50% {
+    transform: translateX(18px) rotate(7deg);
   }
 }
 
