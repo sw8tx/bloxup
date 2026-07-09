@@ -1,15 +1,28 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import './App.css'
 
 const text = 'bloxup.shop'
 const baseUrl = import.meta.env.BASE_URL
+const launchDate = new Date('2026-07-12T15:00:00+02:00')
 const letters = text.split('').map((character, index) => ({
   character,
   index,
 }))
 
+const getCountdown = () => {
+  const remaining = Math.max(0, launchDate.getTime() - Date.now())
+  const totalSeconds = Math.floor(remaining / 1000)
+  const days = Math.floor(totalSeconds / 86400)
+  const hours = Math.floor((totalSeconds % 86400) / 3600)
+  const minutes = Math.floor((totalSeconds % 3600) / 60)
+  const seconds = totalSeconds % 60
+
+  return { days, hours, minutes, seconds }
+}
+
 function App() {
   const titleRef = useRef(null)
+  const [countdown, setCountdown] = useState(getCountdown)
 
   useEffect(() => {
     const title = titleRef.current
@@ -45,6 +58,14 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    const timer = window.setInterval(() => {
+      setCountdown(getCountdown())
+    }, 1000)
+
+    return () => window.clearInterval(timer)
+  }, [])
+
   return (
     <>
       <header className="topbar" aria-label="Bloxup navigation">
@@ -56,20 +77,40 @@ function App() {
         </a>
       </header>
       <main className="home">
-        <h1 className="kinetic-title" aria-label={text} ref={titleRef}>
-          {letters.map(({ character, index }) => {
-            return (
-              <span
-                className={character === '.' ? 'dot letter' : 'letter'}
-                aria-hidden="true"
-                style={{ '--index': index }}
-                key={`${character}-${index}`}
-              >
-                {character}
-              </span>
-            )
-          })}
-        </h1>
+        <section className="hero-stack">
+          <h1 className="kinetic-title" aria-label={text} ref={titleRef}>
+            {letters.map(({ character, index }) => {
+              return (
+                <span
+                  className={character === '.' ? 'dot letter' : 'letter'}
+                  aria-hidden="true"
+                  style={{ '--index': index }}
+                  key={`${character}-${index}`}
+                >
+                  {character}
+                </span>
+              )
+            })}
+          </h1>
+          <div className="countdown" aria-label="Countdown bis 12. Juli 2026 um 15 Uhr">
+            <div className="countdown-cell">
+              <strong>{countdown.days}</strong>
+              <span>Tage</span>
+            </div>
+            <div className="countdown-cell">
+              <strong>{countdown.hours.toString().padStart(2, '0')}</strong>
+              <span>Std</span>
+            </div>
+            <div className="countdown-cell">
+              <strong>{countdown.minutes.toString().padStart(2, '0')}</strong>
+              <span>Min</span>
+            </div>
+            <div className="countdown-cell">
+              <strong>{countdown.seconds.toString().padStart(2, '0')}</strong>
+              <span>Sek</span>
+            </div>
+          </div>
+        </section>
       </main>
     </>
   )

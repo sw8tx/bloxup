@@ -128,6 +128,13 @@
         perspective: 900px;
       }
 
+      .hero-stack {
+        display: grid;
+        justify-items: center;
+        gap: 34px;
+        width: min(100%, 1240px);
+      }
+
       .kinetic-title {
         --tilt-x: 15deg;
         --tilt-y: -10deg;
@@ -138,7 +145,7 @@
         align-items: center;
         margin: 0;
         color: #21e638;
-        font-size: clamp(3.4rem, 11vw, 10rem);
+        font-size: clamp(4rem, 12vw, 11rem);
         font-weight: 900;
         line-height: 0.95;
         letter-spacing: 0;
@@ -147,6 +154,45 @@
         transform-style: preserve-3d;
         transition: transform 140ms ease-out;
         animation: title-in 620ms cubic-bezier(0.16, 1, 0.3, 1) both;
+      }
+
+      .countdown {
+        display: grid;
+        grid-template-columns: repeat(4, minmax(84px, 1fr));
+        gap: 10px;
+        width: min(620px, 92vw);
+        transform: rotateX(8deg) rotateY(-4deg);
+        transform-style: preserve-3d;
+      }
+
+      .countdown-cell {
+        display: grid;
+        justify-items: center;
+        gap: 3px;
+        padding: 10px 8px 9px;
+        color: #111111;
+        background: #ffffff;
+        border: 3px solid #071408;
+        box-shadow:
+          3px 3px 0 #20ec3c,
+          6px 6px 0 #087c1c,
+          10px 12px 14px rgba(0, 0, 0, 0.16);
+      }
+
+      .countdown-cell strong {
+        color: #27ec40;
+        font-size: clamp(1.55rem, 4vw, 2.45rem);
+        font-weight: 900;
+        line-height: 1;
+        -webkit-text-stroke: 1px #071408;
+      }
+
+      .countdown-cell span {
+        color: #111111;
+        font-size: 0.72rem;
+        font-weight: 850;
+        letter-spacing: 0;
+        text-transform: uppercase;
       }
 
       .letter {
@@ -296,10 +342,38 @@
           padding-right: 12px;
         }
 
+        .hero-stack {
+          gap: 24px;
+        }
+
         .kinetic-title {
           --tilt-x: 13deg;
           --tilt-y: -5deg;
-          font-size: clamp(1.9rem, 8.8vw, 2.9rem);
+          font-size: clamp(1.9rem, 8.2vw, 2.75rem);
+        }
+
+        .countdown {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+          gap: 6px;
+          width: min(280px, 70vw);
+          transform: rotateX(6deg);
+        }
+
+        .countdown-cell {
+          padding: 8px 4px 7px;
+          border-width: 2px;
+          box-shadow:
+            2px 2px 0 #20ec3c,
+            4px 4px 0 #087c1c,
+            7px 8px 10px rgba(0, 0, 0, 0.14);
+        }
+
+        .countdown-cell strong {
+          font-size: clamp(1.05rem, 5.4vw, 1.6rem);
+        }
+
+        .countdown-cell span {
+          font-size: 0.58rem;
         }
 
         .letter {
@@ -317,6 +391,7 @@
       @media (prefers-reduced-motion: reduce) {
         .kinetic-title,
         .brand-logo,
+        .countdown,
         .letter {
           animation: none;
           transition: none;
@@ -334,22 +409,49 @@
       </a>
     </header>
     <main class="home">
-      <h1 class="kinetic-title" aria-label="bloxup.shop">
-        <span class="letter" style="--index: 0" aria-hidden="true">b</span>
-        <span class="letter" style="--index: 1" aria-hidden="true">l</span>
-        <span class="letter" style="--index: 2" aria-hidden="true">o</span>
-        <span class="letter" style="--index: 3" aria-hidden="true">x</span>
-        <span class="letter" style="--index: 4" aria-hidden="true">u</span>
-        <span class="letter" style="--index: 5" aria-hidden="true">p</span>
-        <span class="letter dot" style="--index: 6" aria-hidden="true">.</span>
-        <span class="letter" style="--index: 7" aria-hidden="true">s</span>
-        <span class="letter" style="--index: 8" aria-hidden="true">h</span>
-        <span class="letter" style="--index: 9" aria-hidden="true">o</span>
-        <span class="letter" style="--index: 10" aria-hidden="true">p</span>
-      </h1>
+      <section class="hero-stack">
+        <h1 class="kinetic-title" aria-label="bloxup.shop">
+          <span class="letter" style="--index: 0" aria-hidden="true">b</span>
+          <span class="letter" style="--index: 1" aria-hidden="true">l</span>
+          <span class="letter" style="--index: 2" aria-hidden="true">o</span>
+          <span class="letter" style="--index: 3" aria-hidden="true">x</span>
+          <span class="letter" style="--index: 4" aria-hidden="true">u</span>
+          <span class="letter" style="--index: 5" aria-hidden="true">p</span>
+          <span class="letter dot" style="--index: 6" aria-hidden="true">.</span>
+          <span class="letter" style="--index: 7" aria-hidden="true">s</span>
+          <span class="letter" style="--index: 8" aria-hidden="true">h</span>
+          <span class="letter" style="--index: 9" aria-hidden="true">o</span>
+          <span class="letter" style="--index: 10" aria-hidden="true">p</span>
+        </h1>
+        <div class="countdown" aria-label="Countdown bis 12. Juli 2026 um 15 Uhr">
+          <div class="countdown-cell">
+            <strong data-countdown="days">0</strong>
+            <span>Tage</span>
+          </div>
+          <div class="countdown-cell">
+            <strong data-countdown="hours">00</strong>
+            <span>Std</span>
+          </div>
+          <div class="countdown-cell">
+            <strong data-countdown="minutes">00</strong>
+            <span>Min</span>
+          </div>
+          <div class="countdown-cell">
+            <strong data-countdown="seconds">00</strong>
+            <span>Sek</span>
+          </div>
+        </div>
+      </section>
     </main>
     <script>
       const title = document.querySelector(".kinetic-title")
+      const launchDate = new Date("2026-07-12T15:00:00+02:00")
+      const countdownParts = {
+        days: document.querySelector('[data-countdown="days"]'),
+        hours: document.querySelector('[data-countdown="hours"]'),
+        minutes: document.querySelector('[data-countdown="minutes"]'),
+        seconds: document.querySelector('[data-countdown="seconds"]'),
+      }
 
       function clamp(value, min, max) {
         return Math.max(min, Math.min(max, value))
@@ -375,6 +477,23 @@
 
       window.addEventListener("pointermove", moveTitle)
       window.addEventListener("pointerleave", resetTitle)
+
+      function renderCountdown() {
+        const remaining = Math.max(0, launchDate.getTime() - Date.now())
+        const totalSeconds = Math.floor(remaining / 1000)
+        const days = Math.floor(totalSeconds / 86400)
+        const hours = Math.floor((totalSeconds % 86400) / 3600)
+        const minutes = Math.floor((totalSeconds % 3600) / 60)
+        const seconds = totalSeconds % 60
+
+        countdownParts.days.textContent = String(days)
+        countdownParts.hours.textContent = String(hours).padStart(2, "0")
+        countdownParts.minutes.textContent = String(minutes).padStart(2, "0")
+        countdownParts.seconds.textContent = String(seconds).padStart(2, "0")
+      }
+
+      renderCountdown()
+      window.setInterval(renderCountdown, 1000)
     </script>
   </body>
 </html>
