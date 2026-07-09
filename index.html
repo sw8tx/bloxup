@@ -41,6 +41,7 @@
         height: 72px;
         display: flex;
         align-items: center;
+        justify-content: space-between;
         padding: 12px 22px;
         background: rgba(255, 255, 255, 0.94);
         border-bottom: 1px solid rgba(17, 17, 17, 0.08);
@@ -50,7 +51,6 @@
       .brand {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
         min-width: 0;
         color: #111111;
         font-size: 1.05rem;
@@ -59,13 +59,37 @@
         text-decoration: none;
       }
 
+      .rocket-link {
+        position: relative;
+        width: 70px;
+        height: 56px;
+        display: grid;
+        place-items: center;
+        flex: 0 0 auto;
+      }
+
+      .rocket-link::after {
+        position: absolute;
+        right: 36px;
+        bottom: 7px;
+        width: 28px;
+        height: 10px;
+        content: "";
+        background: linear-gradient(90deg, rgba(38, 245, 82, 0), rgba(38, 245, 82, 0.45));
+        border-radius: 999px;
+        filter: blur(3px);
+        opacity: 0;
+        transform: rotate(-35deg);
+        animation: rocket-trail 2800ms ease-in-out infinite;
+      }
+
       .brand-logo {
         width: 52px;
         height: 52px;
         display: block;
         object-fit: contain;
-        transform-origin: center;
-        animation: logo-slide 1800ms ease-in-out infinite;
+        transform-origin: 46% 56%;
+        animation: rocket-launch 2800ms ease-in-out infinite;
       }
 
       .brand-name {
@@ -145,14 +169,62 @@
         }
       }
 
-      @keyframes logo-slide {
-        0%,
-        100% {
-          transform: translateX(0) rotate(-7deg);
+      @keyframes rocket-launch {
+        0% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) rotate(-12deg) scale(1);
         }
 
-        50% {
-          transform: translateX(18px) rotate(7deg);
+        7% {
+          transform: translate3d(-2px, 1px, 0) rotate(-18deg) scale(1.02);
+        }
+
+        14% {
+          transform: translate3d(3px, -1px, 0) rotate(-6deg) scale(1.02);
+        }
+
+        21% {
+          transform: translate3d(-1px, 2px, 0) rotate(-15deg) scale(1.03);
+        }
+
+        28% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) rotate(-12deg) scale(1.04);
+        }
+
+        54% {
+          opacity: 0;
+          transform: translate3d(86px, -118px, 0) rotate(28deg) scale(0.82);
+        }
+
+        72% {
+          opacity: 0;
+          transform: translate3d(-30px, 34px, 0) rotate(-18deg) scale(0.9);
+        }
+
+        100% {
+          opacity: 1;
+          transform: translate3d(0, 0, 0) rotate(-12deg) scale(1);
+        }
+      }
+
+      @keyframes rocket-trail {
+        0%,
+        18%,
+        62%,
+        100% {
+          opacity: 0;
+          transform: translate3d(0, 0, 0) rotate(-35deg) scaleX(0.4);
+        }
+
+        30% {
+          opacity: 0.85;
+          transform: translate3d(-5px, 5px, 0) rotate(-35deg) scaleX(1);
+        }
+
+        46% {
+          opacity: 0.18;
+          transform: translate3d(-30px, 25px, 0) rotate(-35deg) scaleX(2.1);
         }
       }
 
@@ -160,6 +232,11 @@
         .topbar {
           height: 62px;
           padding: 9px 14px;
+        }
+
+        .rocket-link {
+          width: 58px;
+          height: 48px;
         }
 
         .brand-logo {
@@ -208,8 +285,10 @@
   <body>
     <header class="topbar" aria-label="Bloxup navigation">
       <a class="brand" href="./" aria-label="bloxup.shop home">
-        <img class="brand-logo" src="logo.png" alt="" />
         <span class="brand-name">bloxup.shop</span>
+      </a>
+      <a class="rocket-link" href="./" aria-label="bloxup.shop home">
+        <img class="brand-logo" src="logo.png" alt="" />
       </a>
     </header>
     <main class="home">

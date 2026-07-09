@@ -49,8 +49,10 @@ function App() {
     <>
       <header className="topbar" aria-label="Bloxup navigation">
         <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
-          <img className="brand-logo" src={`${baseUrl}logo.png`} alt="" />
           <span className="brand-name">bloxup.shop</span>
+        </a>
+        <a className="rocket-link" href={baseUrl} aria-label="bloxup.shop home">
+          <img className="brand-logo" src={`${baseUrl}logo.png`} alt="" />
         </a>
       </header>
       <main className="home">
