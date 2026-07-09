@@ -78,28 +78,29 @@
       }
 
       .rocket-link::before {
-        left: -16px;
-        bottom: -2px;
-        width: 84px;
-        height: 48px;
+        left: -8px;
+        bottom: 4px;
+        width: 58px;
+        height: 34px;
         background:
-          radial-gradient(circle at 16% 58%, rgba(92, 255, 122, 0.78) 0 16%, transparent 35%),
-          radial-gradient(circle at 36% 38%, rgba(38, 245, 82, 0.72) 0 15%, transparent 33%),
-          radial-gradient(circle at 58% 66%, rgba(171, 255, 190, 0.82) 0 13%, transparent 32%),
-          radial-gradient(circle at 80% 45%, rgba(30, 226, 75, 0.58) 0 12%, transparent 30%);
-        filter: blur(2.5px);
-        transform: translate3d(-18px, 9px, 0) rotate(-28deg) scale(0.65);
+          radial-gradient(circle at 18% 58%, #79ff92 0 13%, transparent 14%),
+          radial-gradient(circle at 40% 36%, #21f452 0 12%, transparent 13%),
+          radial-gradient(circle at 62% 66%, #b8ffc3 0 10%, transparent 11%),
+          radial-gradient(circle at 80% 44%, rgba(30, 226, 75, 0.78) 0 9%, transparent 10%);
+        image-rendering: pixelated;
+        filter: blur(0.7px);
+        transform: translate3d(-10px, 7px, 0) rotate(-28deg) scale(0.55);
         animation: rocket-smoke 2800ms ease-in-out infinite;
       }
 
       .rocket-link::after {
-        left: -26px;
-        bottom: 4px;
-        width: 92px;
-        height: 22px;
-        background: linear-gradient(90deg, rgba(38, 245, 82, 0), rgba(38, 245, 82, 0.82), rgba(185, 255, 198, 0.3), rgba(185, 255, 198, 0));
+        left: -8px;
+        bottom: 10px;
+        width: 46px;
+        height: 12px;
+        background: linear-gradient(90deg, rgba(38, 245, 82, 0), rgba(38, 245, 82, 0.7), rgba(185, 255, 198, 0));
         border-radius: 999px;
-        filter: blur(5px);
+        filter: blur(2px);
         transform: rotate(-35deg) scaleX(0.5);
         animation: rocket-trail 2800ms ease-in-out infinite;
       }
@@ -239,13 +240,13 @@
         }
 
         30% {
-          opacity: 0.95;
-          transform: translate3d(-17px, 11px, 0) rotate(-35deg) scaleX(1.45);
+          opacity: 0.72;
+          transform: translate3d(-8px, 7px, 0) rotate(-35deg) scaleX(1.15);
         }
 
         46% {
-          opacity: 0.4;
-          transform: translate3d(-58px, 42px, 0) rotate(-35deg) scaleX(3.1);
+          opacity: 0.18;
+          transform: translate3d(-28px, 22px, 0) rotate(-35deg) scaleX(1.9);
         }
       }
 
@@ -255,17 +256,17 @@
         68%,
         100% {
           opacity: 0;
-          transform: translate3d(-18px, 9px, 0) rotate(-28deg) scale(0.65);
+          transform: translate3d(-10px, 7px, 0) rotate(-28deg) scale(0.55);
         }
 
         28% {
-          opacity: 1;
-          transform: translate3d(-26px, 18px, 0) rotate(-28deg) scale(1.1);
+          opacity: 0.82;
+          transform: translate3d(-16px, 12px, 0) rotate(-28deg) scale(0.95);
         }
 
         48% {
-          opacity: 0.48;
-          transform: translate3d(-62px, 45px, 0) rotate(-28deg) scale(1.95);
+          opacity: 0.2;
+          transform: translate3d(-32px, 25px, 0) rotate(-28deg) scale(1.35);
         }
       }
 
