@@ -1,16 +1,43 @@
-# React + Vite
+# bloxup.shop Launchpage
 
-This template provides a minimal setup to get React working in Vite with HMR and some Oxlint rules.
+Interaktive Launchpage für den Start am **12. Juli 2026 um 15:00 CEST**. Die
+Seite basiert auf React/Vite und verwendet ein eigens aus dem Bloxup-Icon
+gebautes Blender-/WebGL-Asset.
 
-Currently, two official plugins are available:
+## Entwicklung
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+```bash
+npm install
+npm run dev
+```
 
-## React Compiler
+Qualitätschecks:
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+```bash
+npm run lint
+npm run build
+```
 
-## Expanding the Oxlint configuration
+Der produktive Output liegt in `dist/`. Beim Hosting muss **dieser Ordner**
+veröffentlicht werden, nicht der ungebaute Repository-Root.
 
-If you are developing a production application, we recommend using TypeScript with type-aware lint rules enabled. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) for information on how to integrate TypeScript and Oxlint's TypeScript related rules in your project.
+## Launch-Zeit
+
+Der zentrale Zielzeitpunkt steht in `src/App.jsx` als `LAUNCH_AT`. Der Timer
+wechselt nach Ablauf automatisch in den Live-Zustand.
+
+## 3D-Asset
+
+- Blender-Quelle: `art-source/bloxup-rocket.blend`
+- Reproduzierbares Build-Script: `art-source/build_bloxup_rocket.py`
+- WebGL-Modell: `public/assets/3d/bloxup-rocket.glb`
+- Statischer Fallback: `public/assets/3d/bloxup-rocket-poster.webp`
+
+Asset neu bauen:
+
+```bash
+blender --background --python art-source/build_bloxup_rocket.py
+```
+
+Das GLB ist Draco-komprimiert. Die passenden Decoder liegen lokal unter
+`public/assets/draco/`; es werden keine externen CDNs benötigt.
