@@ -10,6 +10,85 @@ body {
   margin: 0;
 }
 
+.site-shell {
+  position: relative;
+  min-height: 100svh;
+  overflow: hidden;
+  background: var(--white);
+}
+
+.site-header {
+  position: absolute;
+  z-index: 20;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: center;
+  padding: clamp(14px, 2.4vw, 28px) clamp(18px, 4vw, 58px);
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #071006;
+  font-family: Arial Black, Arial, Helvetica, sans-serif;
+  font-size: clamp(1rem, 1.3vw, 1.2rem);
+  font-weight: 950;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+}
+
+.brand__launch {
+  position: relative;
+  width: 54px;
+  height: 54px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+}
+
+.brand__launch img {
+  position: absolute;
+  z-index: 2;
+  left: 1px;
+  bottom: 1px;
+  width: 52px;
+  height: 52px;
+  object-fit: contain;
+  image-rendering: pixelated;
+  animation: brand-launch 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
+
+.brand__smoke {
+  position: absolute;
+  z-index: 1;
+  left: 10px;
+  bottom: 8px;
+  width: 10px;
+  height: 10px;
+  border-radius: 38% 58% 46% 62%;
+  background: #58ff82;
+  opacity: 0;
+  animation: brand-smoke 3.8s ease-out infinite;
+}
+
+.brand__smoke--two {
+  left: 5px;
+  bottom: 3px;
+  width: 8px;
+  height: 8px;
+  animation-delay: 0.08s;
+}
+
+.brand__smoke--three {
+  left: 15px;
+  bottom: 1px;
+  width: 7px;
+  height: 7px;
+  animation-delay: 0.16s;
+}
+
 .rocket-only {
   position: relative;
   width: 100%;
@@ -58,6 +137,71 @@ body {
   display: none;
 }
 
+@keyframes brand-launch {
+  0%,
+  20% {
+    left: 1px;
+    bottom: 1px;
+    width: 52px;
+    height: 52px;
+    opacity: 1;
+  }
+
+  48% {
+    left: 21px;
+    bottom: 21px;
+    width: 48px;
+    height: 48px;
+    opacity: 1;
+  }
+
+  62% {
+    left: 45px;
+    bottom: 45px;
+    width: 38px;
+    height: 38px;
+    opacity: 0;
+  }
+
+  63% {
+    left: -5px;
+    bottom: -5px;
+    width: 41px;
+    height: 41px;
+    opacity: 0;
+  }
+
+  74%,
+  100% {
+    left: 1px;
+    bottom: 1px;
+    width: 52px;
+    height: 52px;
+    opacity: 1;
+  }
+}
+
+@keyframes brand-smoke {
+  0%,
+  16% {
+    opacity: 0;
+    transform: translate3d(8px, -7px, 0) scale(0.45);
+  }
+
+  25% {
+    opacity: 0.9;
+  }
+
+  58% {
+    opacity: 0;
+    transform: translate3d(-12px, 13px, 0) scale(1.65);
+  }
+
+  100% {
+    opacity: 0;
+  }
+}
+
 @media (hover: none), (pointer: coarse) {
   .rocket-scene__canvas {
     pointer-events: none;
@@ -65,6 +209,15 @@ body {
 }
 
 @media (prefers-reduced-motion: reduce) {
+  .brand__launch img,
+  .brand__smoke {
+    animation: none;
+  }
+
+  .brand__smoke {
+    display: none;
+  }
+
   .rocket-scene__canvas {
     display: none;
   }
