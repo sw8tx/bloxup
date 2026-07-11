@@ -106,9 +106,9 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
       pointer.lerp(pointerTarget, 0.055)
 
       if (model) {
-        model.rotation.x = -0.07 + pointer.y * 0.08
-        model.rotation.y = 0.12 + pointer.x * 0.13
-        model.rotation.z = Math.sin(elapsed * 0.55) * 0.018
+        model.rotation.x = -0.08 + pointer.y * 0.08
+        model.rotation.y = 0.2 + elapsed * 0.32 + pointer.x * 0.18
+        model.rotation.z = -0.06 + Math.sin(elapsed * 0.55) * 0.018
         model.position.y = Math.sin(elapsed * 0.85) * 0.09
       }
 
@@ -136,15 +136,17 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
         return
       }
 
-      model = gltf.scene
-      const bounds = new THREE.Box3().setFromObject(model)
+      const asset = gltf.scene
+      const bounds = new THREE.Box3().setFromObject(asset)
       const size = bounds.getSize(new THREE.Vector3())
       const center = bounds.getCenter(new THREE.Vector3())
       const maxDimension = Math.max(size.x, size.y, size.z)
       const scale = 5.65 / maxDimension
 
-      model.position.sub(center.multiplyScalar(scale))
-      model.scale.setScalar(scale)
+      asset.position.sub(center)
+      asset.scale.setScalar(scale)
+      model = new THREE.Group()
+      model.add(asset)
       scene.add(model)
       resize()
       renderer.render(scene, camera)

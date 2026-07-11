@@ -17,7 +17,10 @@ function Header() {
     <header className="site-header">
       <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
         <span className="brand__icon">
-          <img src={`${baseUrl}logo.png`} alt="" />
+          <span className="brand__smoke brand__smoke--one" />
+          <span className="brand__smoke brand__smoke--two" />
+          <span className="brand__smoke brand__smoke--three" />
+          <img src={`${baseUrl}logo-transparent.png`} alt="" />
         </span>
         <span className="brand__wordmark">bloxup.shop</span>
       </a>
@@ -64,10 +67,6 @@ function App() {
             <span>bloxup.shop</span>
             <span>launches soon.</span>
           </h1>
-
-          <p className="hero__intro">
-            A new shop for clean, blocky drops. Opening July 12, 2026 at 3:00 PM CEST.
-          </p>
         </section>
 
         <section
