@@ -1,4 +1,5 @@
 import './App.css'
+import RocketScene from './components/RocketScene.jsx'
 import { useCountdown } from './hooks/useCountdown.js'
 
 const LAUNCH_AT = '2026-07-12T15:00:00+02:00'
@@ -16,25 +17,15 @@ function Header() {
   return (
     <header className="site-header">
       <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
-        <img src={rocketIcon} alt="" />
+        <span className="brand__launch">
+          <span className="brand__smoke brand__smoke--one" />
+          <span className="brand__smoke brand__smoke--two" />
+          <span className="brand__smoke brand__smoke--three" />
+          <img src={rocketIcon} alt="" />
+        </span>
         <span>bloxup.shop</span>
       </a>
     </header>
-  )
-}
-
-function FlyingRocket() {
-  return (
-    <div className="flight-path" aria-hidden="true">
-      <div className="flying-rocket">
-        <div className="smoke-trail">
-          {Array.from({ length: 9 }, (_, index) => (
-            <span key={index} style={{ '--smoke-index': index }} />
-          ))}
-        </div>
-        <img src={rocketIcon} alt="" />
-      </div>
-    </div>
   )
 }
 
@@ -69,8 +60,12 @@ function App() {
     <div className="site-shell">
       <Header />
       <main className="launch-stage">
-        <FlyingRocket />
-        <Countdown />
+        <div className="launch-stage__timer">
+          <Countdown />
+        </div>
+        <section className="launch-stage__visual" aria-label="Bloxup rocket rendered in 3D">
+          <RocketScene />
+        </section>
       </main>
     </div>
   )
