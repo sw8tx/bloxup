@@ -158,7 +158,7 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
       }
 
       canvas.dataset.modelState = error?.message || 'error'
-      console.error('Das 3D-Modell konnte nicht geladen werden.', error)
+      console.error('The 3D model could not be loaded.', error)
       onReady(false)
     },
   )

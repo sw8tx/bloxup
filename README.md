@@ -1,43 +1,52 @@
-# bloxup.shop Launchpage
+# bloxup.shop launch page
 
-Interaktive Launchpage für den Start am **12. Juli 2026 um 15:00 CEST**. Die
-Seite basiert auf React/Vite und verwendet ein eigens aus dem Bloxup-Icon
-gebautes Blender-/WebGL-Asset.
+Interactive launch page for **July 12, 2026 at 3:00 PM CEST**. The site is
+built with React/Vite and uses a custom Blender/WebGL asset derived from the
+original Bloxup icon.
 
-## Entwicklung
+## Development
 
 ```bash
 npm install
 npm run dev
 ```
 
-Qualitätschecks:
+Quality checks:
 
 ```bash
 npm run lint
 npm run build
 ```
 
-Der produktive Output liegt in `dist/`. Beim Hosting muss **dieser Ordner**
-veröffentlicht werden, nicht der ungebaute Repository-Root.
+The production output is generated in `dist/`. Cloudflare must publish this
+directory rather than the unbuilt repository root.
 
-## Launch-Zeit
+## Launch time
 
-Der zentrale Zielzeitpunkt steht in `src/App.jsx` als `LAUNCH_AT`. Der Timer
-wechselt nach Ablauf automatisch in den Live-Zustand.
+The canonical launch timestamp is defined as `LAUNCH_AT` in `src/App.jsx`.
+After the countdown reaches zero, it automatically switches to the live state.
 
-## 3D-Asset
+## Cloudflare deployment
 
-- Blender-Quelle: `art-source/bloxup-rocket.blend`
-- Reproduzierbares Build-Script: `art-source/build_bloxup_rocket.py`
-- WebGL-Modell: `public/assets/3d/bloxup-rocket.glb`
-- Statischer Fallback: `public/assets/3d/bloxup-rocket-poster.webp`
+```bash
+npm run deploy:cloudflare
+```
 
-Asset neu bauen:
+The deployment script builds the app and uploads `dist/` to the `bloxup`
+Cloudflare Pages project.
+
+## 3D asset
+
+- Blender source: `art-source/bloxup-rocket.blend`
+- Reproducible build script: `art-source/build_bloxup_rocket.py`
+- WebGL model: `public/assets/3d/bloxup-rocket.glb`
+- Static fallback: `public/assets/3d/bloxup-rocket-poster.webp`
+
+Rebuild the asset with Blender:
 
 ```bash
 blender --background --python art-source/build_bloxup_rocket.py
 ```
 
-Das GLB ist Draco-komprimiert. Die passenden Decoder liegen lokal unter
-`public/assets/draco/`; es werden keine externen CDNs benötigt.
+The GLB uses Draco compression. Matching decoders are included locally under
+`public/assets/draco/`; the runtime does not depend on an external CDN.

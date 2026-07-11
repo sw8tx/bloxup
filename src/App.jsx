@@ -6,23 +6,23 @@ const LAUNCH_AT = '2026-07-12T15:00:00+02:00'
 const baseUrl = import.meta.env.BASE_URL
 
 const countdownUnits = [
-  { key: 'days', shortLabel: 'Tage' },
-  { key: 'hours', shortLabel: 'Std' },
+  { key: 'days', shortLabel: 'Days' },
+  { key: 'hours', shortLabel: 'Hrs' },
   { key: 'minutes', shortLabel: 'Min' },
-  { key: 'seconds', shortLabel: 'Sek' },
+  { key: 'seconds', shortLabel: 'Sec' },
 ]
 
 function Header() {
   return (
     <header className="site-header">
-      <a className="brand" href={baseUrl} aria-label="bloxup.shop Startseite">
+      <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
         <span className="brand__icon">
           <img src={`${baseUrl}logo.png`} alt="" />
         </span>
         <span className="brand__wordmark">bloxup.shop</span>
       </a>
 
-      <div className="header-status" aria-label="Launch am 12. Juli 2026">
+      <div className="header-status" aria-label="Launch on July 12, 2026">
         <span>Launch</span>
         <span aria-hidden="true">/</span>
         <span>12 Jul 2026</span>
@@ -37,14 +37,14 @@ function Countdown() {
   return (
     <section className="countdown" id="countdown" aria-labelledby="timer-title">
       <div className="countdown__header">
-        <span id="timer-title">Shop öffnet in</span>
-        <time dateTime={LAUNCH_AT}>12. Juli 2026 · 15:00 CEST</time>
+        <span id="timer-title">Shop opens in</span>
+        <time dateTime={LAUNCH_AT}>July 12, 2026 · 3:00 PM CEST</time>
       </div>
 
       {countdown.isLive ? (
         <div className="countdown__live" role="status">
           <span className="countdown__live-dot" />
-          <strong>Wir sind live.</strong>
+          <strong>We are live.</strong>
         </div>
       ) : (
         <div className="countdown__instrument">
@@ -53,7 +53,7 @@ function Countdown() {
           </span>
           <dl
             className="countdown__values"
-            aria-label="Verbleibende Zeit bis zum Launch"
+            aria-label="Time remaining until launch"
           >
             {countdownUnits.map(({ key, shortLabel }) => (
               <div className="countdown__unit" key={key}>
@@ -85,16 +85,19 @@ function App() {
           </div>
 
           <h1 id="hero-title">
-            <span>Noch im</span>
+            <span>Still in the</span>
             <span className="hero__headline-accent">Hangar.</span>
           </h1>
 
           <p className="hero__intro">
-            <strong>bloxup.shop</strong> startet am 12.07.2026 um 15:00 CEST.
+            <strong>bloxup.shop</strong> launches July 12, 2026 at 3:00 PM CEST.
           </p>
         </section>
 
-        <section className="hero__visual" aria-label="Bloxup Rakete in 3D">
+        <section
+          className="hero__visual"
+          aria-label="Bloxup rocket rendered in 3D"
+        >
           <div className="visual-meta visual-meta--top" aria-hidden="true">
             <span>Icon / Voxel study</span>
             <span>Fig. 01</span>
@@ -115,15 +118,15 @@ function App() {
         <div className="launch-rail__track" aria-hidden="true">
           <span>FINAL CHECKS IN PROGRESS</span>
           <i>◆</i>
-          <span>12 JULI 2026</span>
+          <span>JULY 12, 2026</span>
           <i>◆</i>
-          <span>15:00 CEST</span>
+          <span>3:00 PM CEST</span>
           <i>◆</i>
           <span>FINAL CHECKS IN PROGRESS</span>
           <i>◆</i>
-          <span>12 JULI 2026</span>
+          <span>JULY 12, 2026</span>
           <i>◆</i>
-          <span>15:00 CEST</span>
+          <span>3:00 PM CEST</span>
         </div>
       </footer>
     </div>
