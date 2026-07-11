@@ -57,36 +57,54 @@ body {
   height: 52px;
   object-fit: contain;
   image-rendering: pixelated;
-  animation: brand-launch 3.8s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+  animation: brand-launch 4.4s cubic-bezier(0.32, 0, 0.18, 1) infinite;
 }
 
 .brand__smoke {
+  --smoke-left: 10px;
+  --smoke-bottom: 8px;
+  --smoke-size: 9px;
   position: absolute;
   z-index: 1;
-  left: 10px;
-  bottom: 8px;
-  width: 10px;
-  height: 10px;
-  border-radius: 38% 58% 46% 62%;
+  left: var(--smoke-left);
+  bottom: var(--smoke-bottom);
+  width: var(--smoke-size);
+  height: var(--smoke-size);
+  border-radius: 2px;
   background: #58ff82;
   opacity: 0;
-  animation: brand-smoke 3.8s ease-out infinite;
+  animation: brand-smoke 4.4s steps(6, end) infinite;
 }
 
 .brand__smoke--two {
-  left: 5px;
-  bottom: 3px;
-  width: 8px;
-  height: 8px;
-  animation-delay: 0.08s;
+  --smoke-left: 6px;
+  --smoke-bottom: 4px;
+  --smoke-size: 7px;
+  background: #26ef58;
+  animation-delay: 0.07s;
 }
 
 .brand__smoke--three {
-  left: 15px;
-  bottom: 1px;
-  width: 7px;
-  height: 7px;
-  animation-delay: 0.16s;
+  --smoke-left: 15px;
+  --smoke-bottom: 2px;
+  --smoke-size: 6px;
+  animation-delay: 0.14s;
+}
+
+.brand__smoke--four {
+  --smoke-left: 3px;
+  --smoke-bottom: 11px;
+  --smoke-size: 5px;
+  background: #aaff1d;
+  animation-delay: 0.2s;
+}
+
+.brand__smoke--five {
+  --smoke-left: 13px;
+  --smoke-bottom: 11px;
+  --smoke-size: 5px;
+  background: #26ef58;
+  animation-delay: 0.27s;
 }
 
 .rocket-only {
@@ -139,7 +157,7 @@ body {
 
 @keyframes brand-launch {
   0%,
-  20% {
+  18% {
     left: 1px;
     bottom: 1px;
     width: 52px;
@@ -147,31 +165,55 @@ body {
     opacity: 1;
   }
 
-  48% {
-    left: 21px;
-    bottom: 21px;
-    width: 48px;
-    height: 48px;
+  22% {
+    left: 0;
+    bottom: -1px;
+    width: 53px;
+    height: 53px;
     opacity: 1;
   }
 
-  62% {
-    left: 45px;
-    bottom: 45px;
-    width: 38px;
-    height: 38px;
+  31% {
+    left: 9px;
+    bottom: 9px;
+    width: 51px;
+    height: 51px;
+    opacity: 1;
+  }
+
+  49% {
+    left: 42px;
+    bottom: 42px;
+    width: 43px;
+    height: 43px;
+    opacity: 1;
+  }
+
+  57% {
+    left: 66px;
+    bottom: 66px;
+    width: 36px;
+    height: 36px;
     opacity: 0;
   }
 
-  63% {
-    left: -5px;
-    bottom: -5px;
-    width: 41px;
-    height: 41px;
+  58% {
+    left: -3px;
+    bottom: -3px;
+    width: 46px;
+    height: 46px;
     opacity: 0;
   }
 
-  74%,
+  66% {
+    left: 2px;
+    bottom: 0;
+    width: 53px;
+    height: 53px;
+    opacity: 1;
+  }
+
+  72%,
   100% {
     left: 1px;
     bottom: 1px;
@@ -183,18 +225,36 @@ body {
 
 @keyframes brand-smoke {
   0%,
-  16% {
+  17% {
+    left: var(--smoke-left);
+    bottom: var(--smoke-bottom);
+    width: 3px;
+    height: 3px;
     opacity: 0;
-    transform: translate3d(8px, -7px, 0) scale(0.45);
   }
 
-  25% {
-    opacity: 0.9;
+  22% {
+    left: var(--smoke-left);
+    bottom: var(--smoke-bottom);
+    width: var(--smoke-size);
+    height: var(--smoke-size);
+    opacity: 1;
   }
 
-  58% {
+  34% {
+    left: calc(var(--smoke-left) - 7px);
+    bottom: calc(var(--smoke-bottom) - 6px);
+    width: calc(var(--smoke-size) + 3px);
+    height: calc(var(--smoke-size) + 3px);
+    opacity: 0.72;
+  }
+
+  48% {
+    left: calc(var(--smoke-left) - 15px);
+    bottom: calc(var(--smoke-bottom) - 13px);
+    width: calc(var(--smoke-size) + 7px);
+    height: calc(var(--smoke-size) + 7px);
     opacity: 0;
-    transform: translate3d(-12px, 13px, 0) scale(1.65);
   }
 
   100% {

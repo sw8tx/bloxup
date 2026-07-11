@@ -12,6 +12,8 @@ function Header() {
           <span className="brand__smoke brand__smoke--one" />
           <span className="brand__smoke brand__smoke--two" />
           <span className="brand__smoke brand__smoke--three" />
+          <span className="brand__smoke brand__smoke--four" />
+          <span className="brand__smoke brand__smoke--five" />
           <img src={rocketIcon} alt="" />
         </span>
         <span>bloxup.shop</span>
