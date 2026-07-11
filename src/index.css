@@ -1,7 +1,7 @@
 :root {
   font-family: Arial, Helvetica, sans-serif;
-  color: #f2f0e7;
-  background: #080a08;
+  color: #071006;
+  background: #fbfff6;
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
@@ -15,7 +15,7 @@
 html {
   min-width: 320px;
   min-height: 100%;
-  background: #080a08;
+  background: #fbfff6;
   scroll-behavior: smooth;
 }
 
@@ -28,7 +28,7 @@ body,
 
 body {
   overflow-x: hidden;
-  background: #080a08;
+  background: #fbfff6;
 }
 
 button,
@@ -43,11 +43,11 @@ canvas {
 }
 
 ::selection {
-  color: #080a08;
-  background: #45ff60;
+  color: #071006;
+  background: #b7ff12;
 }
 
 :focus-visible {
-  outline: 2px solid #45ff60;
+  outline: 2px solid #b7ff12;
   outline-offset: 4px;
 }
