@@ -299,9 +299,9 @@ def add_cuboid(
             (start + 3, start + 7, start + 6, start + 2),  # top
         ]
     )
-    material_ids.extend(
-        [front_material, side_material, side_material, side_material, side_material, side_material]
-    )
+    # Keep every voxel painted on all sides so the rotating model never reveals
+    # a flat black back face.
+    material_ids.extend([front_material] * 6)
 
 
 def build_voxel_mesh(cells: list[dict], materials: dict[str, bpy.types.Material]) -> bpy.types.Object:
