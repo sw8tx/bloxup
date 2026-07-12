@@ -61,6 +61,220 @@ const orderEvents = [
   { platform: 'YouTube', text: 'Ben ordered YouTube Comments', time: '1 min ago' },
 ]
 
+const policyPages = {
+  '/tos': {
+    eyebrow: 'Legal',
+    title: 'Terms of Service',
+    updated: 'Last updated: July 12, 2026',
+    intro: 'These Terms explain how bloxup.shop works when you browse, create an account, place an order, or use our digital social boost services.',
+    sections: [
+      {
+        title: '1. Who we are',
+        body: [
+          'bloxup.shop provides digital social media boost services for supported platforms such as TikTok, YouTube, Twitch, and Roblox. We are not owned by, endorsed by, or officially partnered with TikTok, YouTube, Twitch, Roblox, Meta, Instagram, LinkedIn, or any other platform unless we state that clearly in writing.',
+        ],
+      },
+      {
+        title: '2. Using the site',
+        body: [
+          'You agree to use the site only for lawful purposes and to provide accurate order, account, payment, and delivery information.',
+          'You are responsible for checking that your order details are correct before purchase, including profile links, usernames, service type, quantity, and platform.',
+        ],
+      },
+      {
+        title: '3. Orders and delivery',
+        body: [
+          'Most services are digital and begin after payment is confirmed and the required delivery information is received.',
+          'Delivery times shown on the site are estimates. Delays may happen because of platform changes, payment review, incorrect order details, maintenance, or high demand.',
+          'If an order cannot be delivered because the supplied profile, page, video, group, or account is private, restricted, deleted, changed, or incorrect, we may ask you for updated details before continuing.',
+        ],
+      },
+      {
+        title: '4. Payments',
+        body: [
+          'Prices are displayed before checkout. Payment may be processed by third-party payment providers. We do not store full card numbers or full payment credentials on bloxup.shop.',
+          'Chargebacks, payment disputes, fraud attempts, or abuse may lead to account restriction, order cancellation, or refusal of future service.',
+        ],
+      },
+      {
+        title: '5. Platform rules and account safety',
+        body: [
+          'You are responsible for following the rules of the platforms you use. Platform terms, algorithms, limits, and enforcement can change at any time.',
+          'We do not ask for your social media password. Do not submit passwords, recovery codes, private login credentials, or sensitive account access information through the site.',
+          'We aim to provide high-quality services, but we cannot guarantee that a third-party platform will never remove engagement, adjust counts, restrict content, or take action on an account.',
+        ],
+      },
+      {
+        title: '6. Prohibited use',
+        body: [
+          'You may not use bloxup.shop for scams, impersonation, harassment, illegal content, harmful content, stolen accounts, payment fraud, spam, or activity that violates applicable law.',
+          'We may refuse, pause, or cancel any order that appears abusive, fraudulent, illegal, or unsafe.',
+        ],
+      },
+      {
+        title: '7. Accounts',
+        body: [
+          'If account features are available, you are responsible for keeping your login information secure and for all activity under your account.',
+          'We may suspend or close accounts that break these Terms, abuse support, submit fraudulent orders, or create risk for bloxup.shop or other users.',
+        ],
+      },
+      {
+        title: '8. Intellectual property',
+        body: [
+          'The bloxup name, visuals, design, 3D rocket, icons, page layout, and site content belong to bloxup.shop or its licensors. You may not copy or resell the site, branding, or content without permission.',
+        ],
+      },
+      {
+        title: '9. Limitation of liability',
+        body: [
+          'To the maximum extent allowed by law, bloxup.shop is not liable for indirect losses, lost profits, platform enforcement, removed engagement, account restrictions, or issues caused by incorrect order details, third-party platforms, payment providers, hosting providers, or user misuse.',
+        ],
+      },
+      {
+        title: '10. Changes',
+        body: [
+          'We may update these Terms when the site, services, legal requirements, or business needs change. The updated version applies when it is posted on this page.',
+        ],
+      },
+      {
+        title: '11. Contact',
+        body: [
+          'Questions about these Terms can be sent to support@bloxup.shop.',
+        ],
+      },
+    ],
+  },
+  '/refund': {
+    eyebrow: 'Support',
+    title: 'Refund Policy',
+    updated: 'Last updated: July 12, 2026',
+    intro: 'This policy explains when refunds, replacements, or store credit may be available for bloxup.shop digital services.',
+    sections: [
+      {
+        title: '1. Digital service orders',
+        body: [
+          'Because bloxup.shop sells digital services, orders may begin processing shortly after payment. Once a service has started or has been delivered, refunds are limited.',
+          'Before ordering, please check the platform, service, quantity, username, profile link, content link, and delivery details carefully.',
+        ],
+      },
+      {
+        title: '2. When you may request a refund',
+        body: [
+          'You may request a refund if the order has not started, if we cannot deliver the service, if there was a duplicate charge, or if a clear technical error caused the wrong service to be purchased.',
+          'If only part of an order can be delivered, we may offer a partial refund, replacement, refill, or store credit based on the undelivered portion.',
+        ],
+      },
+      {
+        title: '3. When refunds may be refused',
+        body: [
+          'Refunds may be refused if the order was already delivered, the delivery details were wrong, the target account or content was private or unavailable, the platform removed counts after delivery, the user changed the target link during delivery, or the request is connected to fraud, abuse, chargeback misuse, or violation of our Terms.',
+          'We do not refund orders simply because a third-party platform later changes counts, limits visibility, removes engagement, or takes action outside our control.',
+        ],
+      },
+      {
+        title: '4. Refill or replacement',
+        body: [
+          'If a service includes a refill or replacement guarantee, the guarantee will be shown on the service page or order details. Refills are only available within the stated guarantee period and only for the same target link or profile.',
+        ],
+      },
+      {
+        title: '5. How to request help',
+        body: [
+          'Send your order ID, email address used for purchase, service name, target link or username, and a short explanation to support@bloxup.shop.',
+          'We may ask for extra information to verify the order and review the issue.',
+        ],
+      },
+      {
+        title: '6. Processing time',
+        body: [
+          'Approved refunds are usually returned to the original payment method when possible. Processing time depends on the payment provider and bank.',
+        ],
+      },
+    ],
+  },
+  '/privacy': {
+    eyebrow: 'Privacy',
+    title: 'Privacy Policy',
+    updated: 'Last updated: July 12, 2026',
+    intro: 'This Privacy Policy explains what bloxup.shop collects, why we collect it, how we use it, and the choices you have.',
+    sections: [
+      {
+        title: '1. Data we collect',
+        body: [
+          'Account data: name, username, email address, password hash, account preferences, and support settings if account features are used.',
+          'Order data: selected service, quantity, order status, target platform, public profile links, usernames, content links, Roblox group or community details, delivery notes, timestamps, and support history.',
+          'Payment data: payment status, transaction ID, amount, currency, billing details, and fraud-prevention signals from payment providers. We do not store full card numbers or full payment credentials.',
+          'Support data: messages, attachments you send, issue details, and communication history.',
+          'Technical data: IP address, device type, browser, operating system, language, approximate location, referrer, pages viewed, error logs, security logs, and cookie or local storage choices.',
+          'Marketing and analytics data: campaign source, referral links, performance events, and consent choices where analytics or marketing tools are used.',
+        ],
+      },
+      {
+        title: '2. Why we use data',
+        body: [
+          'We use data to operate the site, create and manage accounts, process orders, deliver services, provide support, prevent fraud, secure the platform, improve performance, understand what services people use, comply with legal obligations, and communicate important service updates.',
+        ],
+      },
+      {
+        title: '3. Legal bases',
+        body: [
+          'Where GDPR or similar laws apply, we process data based on contract performance, legitimate interests such as security and fraud prevention, legal obligations such as tax or accounting rules, and consent where required for optional cookies, marketing, or certain analytics.',
+        ],
+      },
+      {
+        title: '4. Cookies and local storage',
+        body: [
+          'We may use cookies, pixels, analytics tags, and browser local storage to keep the site working, remember preferences, measure traffic, protect against abuse, and improve checkout. The notification close choice may be saved locally in your browser so the popup stays hidden after you dismiss it.',
+        ],
+      },
+      {
+        title: '5. Who receives data',
+        body: [
+          'We may share data with hosting providers such as Cloudflare, payment processors, fraud-prevention providers, analytics providers, customer support tools, order fulfillment providers, professional advisers, and authorities when legally required.',
+          'We do not sell your personal information for money. If future advertising tools involve sharing data for targeted advertising, we will update this policy and provide the required choices.',
+        ],
+      },
+      {
+        title: '6. International transfers',
+        body: [
+          'Service providers may process data in countries outside your country of residence. Where required, we use appropriate safeguards such as contractual protections or provider compliance programs.',
+        ],
+      },
+      {
+        title: '7. Retention',
+        body: [
+          'We keep data only as long as needed for orders, account access, support, security, fraud prevention, legal, tax, accounting, and dispute purposes. Retention periods vary depending on the type of data and legal requirements.',
+        ],
+      },
+      {
+        title: '8. Your rights',
+        body: [
+          'Depending on where you live, you may have rights to access, correct, delete, restrict, export, or object to certain processing of your personal data. You may also be able to withdraw consent where processing is based on consent.',
+          'California residents may have rights to know, delete, correct, and opt out of certain sharing or selling of personal information if the law applies to us.',
+        ],
+      },
+      {
+        title: '9. Security',
+        body: [
+          'We use reasonable technical and organizational measures to protect the site and data. No online service can guarantee perfect security, so you should use strong passwords and never send social media passwords or recovery codes.',
+        ],
+      },
+      {
+        title: '10. Children',
+        body: [
+          'bloxup.shop is not intended for children under 13. If you believe a child provided personal data, contact us so we can review and delete it where required.',
+        ],
+      },
+      {
+        title: '11. Contact',
+        body: [
+          'Privacy requests and questions can be sent to privacy@bloxup.shop or support@bloxup.shop.',
+        ],
+      },
+    ],
+  },
+}
+
 function servicePath(platform, service) {
   return `/${platform.toLowerCase()}-${service.toLowerCase().replaceAll(' ', '-')}`
 }
@@ -206,12 +420,19 @@ function Footer() {
 }
 
 function OrderNotifications() {
+  const [isDismissed, setIsDismissed] = useState(() => (
+    window.localStorage.getItem('bloxup-order-toast-dismissed') === 'true'
+  ))
   const [notice, setNotice] = useState(() => ({
     id: 0,
     ...orderEvents[0],
   }))
 
   useEffect(() => {
+    if (isDismissed) {
+      return undefined
+    }
+
     const showNextNotice = () => {
       setNotice((current) => {
         let nextIndex = Math.floor(Math.random() * orderEvents.length)
@@ -233,7 +454,16 @@ function OrderNotifications() {
       window.clearTimeout(firstTimer)
       window.clearInterval(interval)
     }
-  }, [])
+  }, [isDismissed])
+
+  const dismissNotice = () => {
+    window.localStorage.setItem('bloxup-order-toast-dismissed', 'true')
+    setIsDismissed(true)
+  }
+
+  if (isDismissed) {
+    return null
+  }
 
   return (
     <div className="order-toast" key={notice.id} role="status" aria-live="polite">
@@ -242,17 +472,54 @@ function OrderNotifications() {
       </span>
       <span className="order-toast__text">{notice.text}</span>
       <span className="order-toast__time">{notice.time}</span>
+      <button className="order-toast__close" type="button" aria-label="Dismiss notification" onClick={dismissNotice}>
+        <span aria-hidden="true">x</span>
+      </button>
     </div>
   )
 }
 
+function PolicyPage({ page }) {
+  return (
+    <main className="policy-page">
+      <section className="policy-page__inner">
+        <a className="policy-page__back" href={baseUrl}>Back to bloxup.shop</a>
+        <span className="policy-page__eyebrow">{page.eyebrow}</span>
+        <h1>{page.title}</h1>
+        <p className="policy-page__updated">{page.updated}</p>
+        <p className="policy-page__intro">{page.intro}</p>
+
+        <div className="policy-page__sections">
+          {page.sections.map((section) => (
+            <section className="policy-section" key={section.title}>
+              <h2>{section.title}</h2>
+              <div className="policy-section__body">
+                {section.body.map((paragraph) => (
+                  <p key={paragraph}>{paragraph}</p>
+                ))}
+              </div>
+            </section>
+          ))}
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function App() {
+  const route = window.location.pathname.toLowerCase()
+  const policyPage = policyPages[route]
+
   return (
     <div className="site-shell">
       <Header />
-      <main className="rocket-only" aria-label="Bloxup rocket rendered in 3D">
-        <RocketScene />
-      </main>
+      {policyPage ? (
+        <PolicyPage page={policyPage} />
+      ) : (
+        <main className="rocket-only" aria-label="Bloxup rocket rendered in 3D">
+          <RocketScene />
+        </main>
+      )}
       <Footer />
       <OrderNotifications />
     </div>
