@@ -121,24 +121,21 @@ body {
   position: relative;
 }
 
-.service-menu summary {
+.service-menu__trigger {
   position: relative;
   min-width: 112px;
   padding: 12px 32px 12px 14px;
+  border: 0;
   color: #071006;
+  background: transparent;
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
   font-size: 0.92rem;
   font-weight: 750;
-  list-style: none;
   cursor: pointer;
   user-select: none;
 }
 
-.service-menu summary::-webkit-details-marker {
-  display: none;
-}
-
-.service-menu summary::after {
+.service-menu__trigger::after {
   position: absolute;
   top: 50%;
   right: 13px;
@@ -151,12 +148,13 @@ body {
   transition: transform 160ms ease;
 }
 
-.service-menu[open] summary::after {
+.service-menu.is-open .service-menu__trigger::after {
   transform: translateY(-28%) rotate(225deg);
 }
 
-.service-menu summary:hover,
-.service-menu[open] summary {
+.service-menu__trigger:hover,
+.service-menu__trigger:focus-visible,
+.service-menu.is-open .service-menu__trigger {
   background: #efffd8;
 }
 
@@ -207,7 +205,7 @@ body {
   background: #efffd8;
 }
 
-.service-menu__links a span {
+.service-menu__icon {
   width: 22px;
   height: 22px;
   display: grid;
@@ -215,13 +213,17 @@ body {
   flex: 0 0 auto;
   border: 1px solid #dfe7da;
   background: #fbfff7;
-  font-family: Arial Black, Arial, Helvetica, sans-serif;
-  font-size: 0.58rem;
-  letter-spacing: -0.04em;
+}
+
+.service-menu__icon svg {
+  width: 16px;
+  height: 16px;
+  display: block;
 }
 
 .service-menu:nth-child(2) .service-menu__links,
-.service-menu:nth-child(3) .service-menu__links {
+.service-menu:nth-child(3) .service-menu__links,
+.service-menu:nth-child(4) .service-menu__links {
   grid-template-columns: 1fr;
 }
 
@@ -447,13 +449,13 @@ body {
     padding-left: 2px;
   }
 
-  .service-menu summary {
+  .service-menu__trigger {
     min-width: 0;
     padding: 11px 25px 11px 8px;
     font-size: 0.75rem;
   }
 
-  .service-menu summary::after {
+  .service-menu__trigger::after {
     right: 9px;
   }
 
