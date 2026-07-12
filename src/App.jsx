@@ -9,7 +9,7 @@ const rocketIcon = `${baseUrl}rocket-icon.png?v=clean-1`
 const serviceGroups = [
   {
     name: 'TikTok',
-    services: ['Followers', 'Likes', 'Reposts', 'Saves', 'Shares', 'Comments'],
+    services: ['Followers', 'Views', 'Likes', 'Reposts', 'Saves', 'Shares', 'Comments'],
   },
   {
     name: 'YouTube',
@@ -61,6 +61,51 @@ const orderEvents = [
   { platform: 'TikTok', text: 'Ava ordered 1,000 TikTok Likes', time: '3 min ago' },
   { platform: 'YouTube', text: 'Ben ordered YouTube Comments', time: '1 min ago' },
 ]
+
+const servicePricing = {
+  followers: 3,
+  subscribers: 3,
+  'community-member': 3,
+  views: 1,
+  likes: 2.5,
+  reposts: 9,
+  saves: 3.5,
+  shares: 4.5,
+  comments: 6,
+}
+
+const serviceDescriptions = {
+  followers: 'Real profile growth delivered at a natural pace, with clean routing and no password required.',
+  subscribers: 'Real channel subscribers delivered steadily, built for clean growth without forcing login access.',
+  'community-member': 'Roblox community members delivered with clean tracking and steady pacing for group growth.',
+  views: 'Views delivered with natural pacing, built to count cleanly without looking like a sudden spike.',
+  likes: 'Real-account likes delivered with controlled pacing to support early engagement signals.',
+  reposts: 'Reposts from real-looking activity streams, paced carefully for stronger distribution signals.',
+  saves: 'Saves delivered steadily to help posts look useful, sticky, and worth coming back to.',
+  shares: 'Shares delivered in clean waves so the post keeps movement without an obvious dump.',
+  comments: 'Custom-looking comment delivery handled with safer pacing and simple order tracking.',
+}
+
+const servicePages = serviceGroups.reduce((pages, group) => {
+  group.services.forEach((service) => {
+    const serviceKey = service.toLowerCase().replaceAll(' ', '-')
+    const rate = servicePricing[serviceKey]
+
+    if (!rate) {
+      return
+    }
+
+    pages[servicePath(group.name, service)] = {
+      platform: group.name,
+      service,
+      serviceKey,
+      rate,
+      description: serviceDescriptions[serviceKey],
+    }
+  })
+
+  return pages
+}, {})
 
 const policyPages = {
   '/tos': {
@@ -483,6 +528,137 @@ function OrderNotifications() {
   )
 }
 
+function formatAmount(value) {
+  return new Intl.NumberFormat('en-US').format(value)
+}
+
+function formatPrice(value) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'EUR',
+  }).format(value)
+}
+
+function ProductPage({ page }) {
+  const presets = [1000, 2500, 5000, 10000, 25000, 50000]
+  const maxAmount = page.serviceKey === 'views' ? 100000 : 50000
+  const step = page.serviceKey === 'views' ? 500 : 250
+  const [amount, setAmount] = useState(1000)
+  const price = (amount / 1000) * page.rate
+  const unitLabel = page.service.toLowerCase()
+  const bestPreset = page.serviceKey === 'views' ? 10000 : 5000
+
+  const updateAmount = (nextAmount) => {
+    setAmount(Math.min(maxAmount, Math.max(1000, Math.round(nextAmount / step) * step)))
+  }
+
+  return (
+    <main className="product-page">
+      <section className="product-hero">
+        <nav className="product-breadcrumb" aria-label="Breadcrumb">
+          <a href={baseUrl}>Home</a>
+          <span>/</span>
+          <a href="/services">Services</a>
+          <span>/</span>
+          <span>{page.platform}</span>
+          <span>/</span>
+          <strong>{page.platform} {page.service}</strong>
+        </nav>
+        <h1>Buy {page.platform} {page.service}</h1>
+        <p>{page.description}</p>
+      </section>
+
+      <section className="product-panel">
+        <div className="product-quality">
+          <article className="quality-card quality-card--active">
+            <span className="quality-card__check">✓</span>
+            <div>
+              <h2>High Quality {page.service}</h2>
+              <p>Affordable {unitLabel} with clean delivery, live tracking, and reliable pacing.</p>
+              <ul>
+                <li>Real users and clean routing</li>
+                <li>Start time: 0-2 hours</li>
+                <li>Auto-refill when available</li>
+                <li>Live order tracking</li>
+                <li>Delivery guarantee</li>
+                <li>No password required</li>
+              </ul>
+            </div>
+          </article>
+
+          <article className="quality-card">
+            <span className="quality-card__circle" />
+            <div>
+              <h2>Exclusive {page.service}</h2>
+              <p>Hand-picked priority delivery with stronger retention. Coming soon.</p>
+            </div>
+          </article>
+        </div>
+
+        <div className="checkout-card">
+          <div className="checkout-summary">
+            <div>
+              <span>I want to buy</span>
+              <strong>{formatAmount(amount)}</strong>
+            </div>
+            <div>
+              <span>I will pay</span>
+              <strong>{formatPrice(price)}</strong>
+            </div>
+          </div>
+
+          <div className="preset-grid" aria-label="Quick amount options">
+            {presets.map((preset) => (
+              <button
+                className={`preset-card${preset === amount ? ' is-selected' : ''}`}
+                type="button"
+                key={preset}
+                onClick={() => updateAmount(preset)}
+              >
+                {preset === bestPreset && <span className="preset-card__tag">Best deal</span>}
+                <strong>{formatAmount(preset)}</strong>
+                <span>{formatPrice((preset / 1000) * page.rate)}</span>
+                <small>{formatPrice(page.rate)} / 1k</small>
+              </button>
+            ))}
+          </div>
+
+          <div className="amount-slider">
+            <span>Pick your exact amount</span>
+            <div className="amount-slider__controls">
+              <button type="button" aria-label="Decrease amount" onClick={() => updateAmount(amount - step)}>-</button>
+              <strong>{formatAmount(amount)}</strong>
+              <button type="button" aria-label="Increase amount" onClick={() => updateAmount(amount + step)}>+</button>
+            </div>
+            <input
+              type="range"
+              min="1000"
+              max={maxAmount}
+              step={step}
+              value={amount}
+              onChange={(event) => updateAmount(Number(event.target.value))}
+              aria-label={`Select ${page.service} amount`}
+            />
+            <div className="amount-slider__range">
+              <span>1,000</span>
+              <span>{formatAmount(maxAmount)}</span>
+            </div>
+            <p>You pay <strong>{formatPrice(price)}</strong> for {formatAmount(amount)} {unitLabel}.</p>
+          </div>
+
+          <button className="add-cart-button" type="button">+ Add to cart</button>
+
+          <div className="trust-row">
+            <span>250 purchases in the last 24 hours</span>
+            <span>Starts within 90 seconds</span>
+            <span>86% buy more than once</span>
+          </div>
+        </div>
+      </section>
+    </main>
+  )
+}
+
 function PolicyLoader() {
   return (
     <div className="policy-loader" role="status" aria-label="Loading legal page">
@@ -554,11 +730,14 @@ function PolicyPage({ page }) {
 function App() {
   const route = window.location.pathname.toLowerCase()
   const policyPage = policyPages[route]
+  const productPage = servicePages[route]
 
   return (
     <div className="site-shell">
       <Header />
-      {policyPage ? (
+      {productPage ? (
+        <ProductPage page={productPage} />
+      ) : policyPage ? (
         <PolicyPage page={policyPage} />
       ) : (
         <main className="rocket-only" aria-label="Bloxup rocket rendered in 3D">
