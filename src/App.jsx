@@ -24,6 +24,43 @@ const serviceGroups = [
   },
 ]
 
+const footerGroups = [
+  {
+    title: 'Shop',
+    links: [
+      ['Shop All Services', '/services'],
+      ['Shopping Cart', '/cart'],
+      ['Content Reward', '/content-reward'],
+      ['FAQ', '/faq'],
+    ],
+  },
+  {
+    title: 'Account',
+    links: [
+      ['Sign up', '/sign-up'],
+      ['Sign in', '/sign-in'],
+      ['Help', '/help'],
+    ],
+  },
+  {
+    title: 'Legal',
+    links: [
+      ['Terms of Service', '/tos'],
+      ['Refund Policy', '/refund'],
+      ['Privacy Policy', '/privacy'],
+    ],
+  },
+]
+
+const orderEvents = [
+  { platform: 'TikTok', text: 'Mia ordered 500 TikTok Followers', time: 'just now' },
+  { platform: 'YouTube', text: 'Noah ordered 100 YouTube Subscribers', time: '1 min ago' },
+  { platform: 'Roblox', text: 'Luca ordered Roblox Community Members', time: '2 min ago' },
+  { platform: 'Twitch', text: 'Emma ordered 250 Twitch Followers', time: 'just now' },
+  { platform: 'TikTok', text: 'Ava ordered 1,000 TikTok Likes', time: '3 min ago' },
+  { platform: 'YouTube', text: 'Ben ordered YouTube Comments', time: '1 min ago' },
+]
+
 function servicePath(platform, service) {
   return `/${platform.toLowerCase()}-${service.toLowerCase().replaceAll(' ', '-')}`
 }
@@ -139,6 +176,76 @@ function Header() {
   )
 }
 
+function Footer() {
+  return (
+    <footer className="site-footer" id="footer">
+      <div className="footer-brand">
+        <a className="footer-brand__lockup" href={baseUrl} aria-label="bloxup.shop home">
+          <img src={rocketIcon} alt="" />
+          <span>bloxup</span>
+        </a>
+        <p>
+          Premium social boosts for every platform - high quality, instantly delivered and no risk of being banned.
+          Satisfaction is guaranteed.
+        </p>
+        <span className="footer-brand__copyright">2026 bloxup. All rights reserved.</span>
+      </div>
+
+      <div className="footer-links" aria-label="Footer navigation">
+        {footerGroups.map((group) => (
+          <div className="footer-links__group" key={group.title}>
+            <strong>{group.title}</strong>
+            {group.links.map(([label, href]) => (
+              <a href={href} key={href}>{label}</a>
+            ))}
+          </div>
+        ))}
+      </div>
+    </footer>
+  )
+}
+
+function OrderNotifications() {
+  const [notice, setNotice] = useState(() => ({
+    id: 0,
+    ...orderEvents[0],
+  }))
+
+  useEffect(() => {
+    const showNextNotice = () => {
+      setNotice((current) => {
+        let nextIndex = Math.floor(Math.random() * orderEvents.length)
+        if (orderEvents[nextIndex].text === current.text) {
+          nextIndex = (nextIndex + 1) % orderEvents.length
+        }
+
+        return {
+          id: current.id + 1,
+          ...orderEvents[nextIndex],
+        }
+      })
+    }
+
+    const firstTimer = window.setTimeout(showNextNotice, 1400)
+    const interval = window.setInterval(showNextNotice, 5600)
+
+    return () => {
+      window.clearTimeout(firstTimer)
+      window.clearInterval(interval)
+    }
+  }, [])
+
+  return (
+    <div className="order-toast" key={notice.id} role="status" aria-live="polite">
+      <span className="order-toast__icon">
+        <PlatformIcon platform={notice.platform} />
+      </span>
+      <span className="order-toast__text">{notice.text}</span>
+      <span className="order-toast__time">{notice.time}</span>
+    </div>
+  )
+}
+
 function App() {
   return (
     <div className="site-shell">
@@ -146,6 +253,8 @@ function App() {
       <main className="rocket-only" aria-label="Bloxup rocket rendered in 3D">
         <RocketScene />
       </main>
+      <Footer />
+      <OrderNotifications />
     </div>
   )
 }

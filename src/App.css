@@ -13,7 +13,6 @@ body {
 .site-shell {
   position: relative;
   min-height: 100svh;
-  overflow: hidden;
   background: var(--white);
 }
 
@@ -275,6 +274,145 @@ body {
   display: none;
 }
 
+.site-footer {
+  position: relative;
+  z-index: 5;
+  display: grid;
+  grid-template-columns: minmax(260px, 0.95fr) minmax(360px, 1.25fr);
+  gap: clamp(34px, 8vw, 150px);
+  padding: clamp(34px, 5vw, 74px) clamp(22px, 8vw, 156px);
+  border-top: 1px solid #e1e8dc;
+  background: #ffffff;
+  color: #10180f;
+}
+
+.footer-brand {
+  max-width: 460px;
+}
+
+.footer-brand__lockup {
+  display: inline-flex;
+  align-items: center;
+  gap: 12px;
+  color: #071006;
+  font-family: Arial Black, Arial, Helvetica, sans-serif;
+  font-size: 1.05rem;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+}
+
+.footer-brand__lockup img {
+  width: 38px;
+  height: 38px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.footer-brand p {
+  margin: 14px 0 18px;
+  max-width: 420px;
+  color: #6d7969;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.9rem;
+  font-weight: 700;
+  line-height: 1.45;
+}
+
+.footer-brand__copyright {
+  display: block;
+  color: #94a18f;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 800;
+}
+
+.footer-links {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(120px, 1fr));
+  gap: clamp(20px, 4vw, 64px);
+  justify-self: end;
+  width: min(620px, 100%);
+}
+
+.footer-links__group {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.footer-links__group strong {
+  color: #10180f;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 900;
+}
+
+.footer-links__group a {
+  color: #778472;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.84rem;
+  font-weight: 750;
+  line-height: 1.15;
+  text-decoration: none;
+}
+
+.footer-links__group a:hover,
+.footer-links__group a:focus-visible {
+  color: #071006;
+}
+
+.order-toast {
+  position: fixed;
+  z-index: 40;
+  left: clamp(14px, 2vw, 28px);
+  bottom: clamp(14px, 2vw, 28px);
+  display: grid;
+  grid-template-columns: 36px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  width: min(480px, calc(100vw - 28px));
+  padding: 12px 16px 12px 12px;
+  border: 1px solid #ccd7c7;
+  border-radius: 6px;
+  background: #ffffff;
+  box-shadow: 0 16px 36px rgba(7, 16, 6, 0.15);
+  color: #10180f;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  animation: order-toast-enter 360ms cubic-bezier(0.21, 1, 0.33, 1) both;
+}
+
+.order-toast__icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d8e2d3;
+  background: #fbfff7;
+}
+
+.order-toast__icon svg {
+  width: 22px;
+  height: 22px;
+}
+
+.order-toast__text {
+  min-width: 0;
+  overflow: hidden;
+  color: #111a0f;
+  font-size: 0.92rem;
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.order-toast__time {
+  color: #8a9884;
+  font-size: 0.78rem;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
 @keyframes brand-launch {
   0%,
   18% {
@@ -417,6 +555,18 @@ body {
   }
 }
 
+@keyframes order-toast-enter {
+  0% {
+    opacity: 0;
+    transform: translate3d(-18px, 8px, 0);
+  }
+
+  100% {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
 @media (hover: none), (pointer: coarse) {
   .rocket-scene__canvas {
     pointer-events: none;
@@ -466,6 +616,28 @@ body {
     left: 12px;
     width: auto;
   }
+
+  .site-footer {
+    grid-template-columns: 1fr;
+    gap: 28px;
+    padding: 36px 22px 96px;
+  }
+
+  .footer-links {
+    grid-template-columns: 1fr;
+    justify-self: stretch;
+    gap: 24px;
+  }
+
+  .order-toast {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  .order-toast__time {
+    display: none;
+  }
 }
 
 @media (prefers-reduced-motion: reduce) {
@@ -480,5 +652,9 @@ body {
 
   .rocket-scene__canvas {
     display: none;
+  }
+
+  .order-toast {
+    animation: none;
   }
 }
