@@ -16,6 +16,32 @@ function disposeGroup(group) {
   })
 }
 
+function easeInOut(value) {
+  return value < 0.5
+    ? 4 * value * value * value
+    : 1 - ((-2 * value + 2) ** 3) / 2
+}
+
+function getBurstAmount(phase) {
+  if (phase < 0.16) {
+    return 0
+  }
+
+  if (phase < 0.36) {
+    return easeInOut((phase - 0.16) / 0.2)
+  }
+
+  if (phase < 0.62) {
+    return 1
+  }
+
+  if (phase < 0.86) {
+    return 1 - easeInOut((phase - 0.62) / 0.24)
+  }
+
+  return 0
+}
+
 async function createFooterBloxScene({ container, canvas, onReady, isCancelled }) {
   const THREE = await import('three')
 
@@ -46,16 +72,17 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
 
   const scene = new THREE.Scene()
   const camera = new THREE.PerspectiveCamera(36, 1, 0.1, 100)
-  camera.position.set(0.3, 0.25, 8)
+  camera.position.set(0.2, 0.28, 8.4)
 
   const group = new THREE.Group()
-  const cubeGeometry = new THREE.BoxGeometry(0.48, 0.48, 0.48)
+  const cubeGeometry = new THREE.BoxGeometry(0.44, 0.44, 0.44)
   const edgeGeometry = new THREE.EdgesGeometry(cubeGeometry)
   const green = new THREE.MeshStandardMaterial({ color: 0x35ef4f, roughness: 0.48, metalness: 0.08 })
   const lightGreen = new THREE.MeshStandardMaterial({ color: 0xcaff9d, roughness: 0.56, metalness: 0.04 })
   const black = new THREE.MeshStandardMaterial({ color: 0x071006, roughness: 0.5, metalness: 0.08 })
   const white = new THREE.MeshStandardMaterial({ color: 0xf8fff4, roughness: 0.54, metalness: 0.04 })
   const edge = new THREE.LineBasicMaterial({ color: 0x071006, transparent: true, opacity: 0.45 })
+  const pieces = []
 
   const blocks = [
     [-2, 2, 'black'], [-2, 1, 'black'], [-2, 0, 'black'], [-2, -1, 'black'], [-2, -2, 'black'],
@@ -70,13 +97,27 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
   const materials = { green, light: lightGreen, black, white }
 
   blocks.forEach(([x, y, materialKey], index) => {
+    const piece = new THREE.Group()
     const block = new THREE.Mesh(cubeGeometry, materials[materialKey])
-    block.position.set(x * 0.48, y * 0.48, (index % 3) * 0.055)
-    group.add(block)
-
     const outline = new THREE.LineSegments(edgeGeometry, edge)
-    outline.position.copy(block.position)
-    group.add(outline)
+    piece.add(block, outline)
+
+    const home = new THREE.Vector3(x * 0.48, y * 0.48, (index % 3) * 0.12)
+    const angle = Math.atan2(y, x || 0.2) + index * 0.31
+    const radius = 1.05 + (index % 5) * 0.18 + Math.abs(x) * 0.1
+    const burst = new THREE.Vector3(
+      Math.cos(angle) * radius,
+      Math.sin(angle) * radius * 0.82,
+      ((index % 7) - 3) * 0.34,
+    )
+
+    piece.position.copy(home)
+    piece.userData.home = home
+    piece.userData.burst = burst
+    piece.userData.spin = (index % 2 === 0 ? 1 : -1) * (0.75 + (index % 4) * 0.22)
+    piece.userData.lift = 0.08 + (index % 6) * 0.018
+    group.add(piece)
+    pieces.push(piece)
   })
 
   const baseGeometry = new THREE.BoxGeometry(2.9, 0.16, 1.1)
@@ -88,7 +129,7 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
   base.rotation.z = -0.08
   group.add(base)
 
-  group.rotation.set(-0.18, -0.48, -0.06)
+  group.rotation.set(-0.18, -0.58, -0.06)
   group.scale.setScalar(1.05)
   scene.add(group)
 
@@ -119,9 +160,35 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
 
     if (isVisible) {
       const elapsed = clock.getElapsedTime()
-      group.rotation.y = -0.52 + Math.sin(elapsed * 0.7) * 0.18
-      group.rotation.x = -0.16 + Math.sin(elapsed * 0.52) * 0.06
-      group.position.y = Math.sin(elapsed * 1.1) * 0.06
+      const cycle = 5.8
+      const phase = (elapsed % cycle) / cycle
+      const burstAmount = getBurstAmount(phase)
+      const swirl = burstAmount * (elapsed * 1.75 + phase * Math.PI * 2)
+      canvas.dataset.burstAmount = burstAmount.toFixed(2)
+
+      pieces.forEach((piece, index) => {
+        const home = piece.userData.home
+        const burst = piece.userData.burst
+        const spin = piece.userData.spin
+        const lift = Math.sin(elapsed * 2.2 + index) * piece.userData.lift * burstAmount
+        const rotatedX = burst.x * Math.cos(swirl + spin) - burst.z * Math.sin(swirl + spin)
+        const rotatedZ = burst.x * Math.sin(swirl + spin) + burst.z * Math.cos(swirl + spin)
+
+        piece.position.set(
+          home.x + rotatedX * burstAmount,
+          home.y + burst.y * burstAmount + lift,
+          home.z + rotatedZ * burstAmount,
+        )
+        piece.rotation.x = burstAmount * (elapsed * 1.2 + index * 0.17)
+        piece.rotation.y = burstAmount * (elapsed * spin + index * 0.11)
+        piece.rotation.z = burstAmount * Math.sin(elapsed + index)
+      })
+
+      base.scale.x = 1 + Math.sin(phase * Math.PI) * 0.16
+      base.material.opacity = 0.34 + (1 - burstAmount) * 0.18
+      group.rotation.y = -0.56 + Math.sin(elapsed * 0.62) * 0.1 + burstAmount * 0.24
+      group.rotation.x = -0.18 + Math.sin(elapsed * 0.52) * 0.05
+      group.position.y = Math.sin(elapsed * 1.1) * 0.05
       renderer.render(scene, camera)
     }
 

@@ -317,9 +317,9 @@ body {
 
 .footer-blox-scene {
   position: relative;
-  width: 132px;
-  height: 96px;
-  margin: -24px 0 -18px;
+  width: 168px;
+  height: 128px;
+  margin: -38px 0 -28px;
   overflow: visible;
   flex: 0 0 auto;
 }
@@ -925,9 +925,9 @@ body {
   }
 
   .footer-blox-scene {
-    width: 124px;
-    height: 78px;
-    margin: -8px 0 -14px;
+    width: 150px;
+    height: 104px;
+    margin: -18px 0 -18px;
   }
 
   .order-toast {
