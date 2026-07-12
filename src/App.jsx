@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import './App.css'
+import FooterBloxScene from './components/FooterBloxScene.jsx'
 import RocketScene from './components/RocketScene.jsx'
 
 const baseUrl = import.meta.env.BASE_URL
@@ -394,10 +395,13 @@ function Footer() {
   return (
     <footer className="site-footer" id="footer">
       <div className="footer-brand">
-        <a className="footer-brand__lockup" href={baseUrl} aria-label="bloxup.shop home">
-          <img src={rocketIcon} alt="" />
-          <span>bloxup</span>
-        </a>
+        <div className="footer-brand__head">
+          <a className="footer-brand__lockup" href={baseUrl} aria-label="bloxup.shop home">
+            <img src={rocketIcon} alt="" />
+            <span>bloxup</span>
+          </a>
+          <FooterBloxScene />
+        </div>
         <p>
           Premium social boosts for every platform - high quality, instantly delivered and no risk of being banned.
           Satisfaction is guaranteed.
@@ -493,6 +497,7 @@ function PolicyLoader() {
 function PolicyPage({ page }) {
   const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
   const [showLoader, setShowLoader] = useState(!reduceMotion)
+  const [isLeaving, setIsLeaving] = useState(false)
 
   useEffect(() => {
     if (reduceMotion) {
@@ -506,11 +511,24 @@ function PolicyPage({ page }) {
     return () => window.clearTimeout(loaderTimer)
   }, [reduceMotion, page.title])
 
+  const handleBackToMenu = (event) => {
+    if (reduceMotion) {
+      return
+    }
+
+    event.preventDefault()
+    setIsLeaving(true)
+
+    window.setTimeout(() => {
+      window.location.href = baseUrl
+    }, 620)
+  }
+
   return (
     <main className="policy-page">
-      {showLoader && <PolicyLoader />}
+      {(showLoader || isLeaving) && <PolicyLoader />}
       <section className="policy-page__inner">
-        <a className="policy-page__back" href={baseUrl}>Back to bloxup.shop</a>
+        <a className="policy-page__back" href={baseUrl} onClick={handleBackToMenu}>Back to Menu</a>
         <span className="policy-page__eyebrow">{page.eyebrow}</span>
         <h1>{page.title}</h1>
         <p className="policy-page__updated">{page.updated}</p>
