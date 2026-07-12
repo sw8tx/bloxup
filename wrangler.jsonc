@@ -2,5 +2,19 @@
   "$schema": "./node_modules/wrangler/config-schema.json",
   "name": "bloxup",
   "pages_build_output_dir": "./dist",
-  "compatibility_date": "2026-07-11"
+  "compatibility_date": "2026-07-11",
+  "kv_namespaces": [
+    {
+      "binding": "AUTH_KV",
+      "id": "4828f892918541e6a9299d9d823b9e8e"
+    }
+  ],
+  "send_email": [
+    {
+      "name": "EMAIL",
+      "allowed_sender_addresses": [
+        "help@bloxup.shop"
+      ]
+    }
+  ]
 }

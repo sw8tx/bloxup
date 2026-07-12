@@ -722,6 +722,173 @@ function ProductPage({ page }) {
   )
 }
 
+function AuthPage() {
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [step, setStep] = useState('email')
+  const [status, setStatus] = useState('')
+  const [error, setError] = useState('')
+  const [user, setUser] = useState(null)
+  const [isBusy, setIsBusy] = useState(false)
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data) => {
+        if (isMounted && data.authenticated) {
+          setUser(data.user)
+          setStep('done')
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  const submitEmail = async (event) => {
+    event.preventDefault()
+    setIsBusy(true)
+    setError('')
+    setStatus('')
+
+    try {
+      const response = await fetch('/api/auth/request-code', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not send code.')
+      }
+
+      setStep('code')
+      setStatus('Code sent. Check your inbox.')
+    } catch (requestError) {
+      setError(requestError.message)
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const submitCode = async (event) => {
+    event.preventDefault()
+    setIsBusy(true)
+    setError('')
+    setStatus('')
+
+    try {
+      const response = await fetch('/api/auth/verify', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ email, code }),
+      })
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.message || 'Could not verify code.')
+      }
+
+      setUser(data.user)
+      setStep('done')
+      setStatus('You are signed in.')
+    } catch (verifyError) {
+      setError(verifyError.message)
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  const logout = async () => {
+    setIsBusy(true)
+    setError('')
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+      setCode('')
+      setStep('email')
+      setStatus('Signed out.')
+    } catch {
+      setError('Could not sign out.')
+    } finally {
+      setIsBusy(false)
+    }
+  }
+
+  return (
+    <main className="auth-page">
+      <section className="auth-card">
+        <a className="auth-card__brand" href={baseUrl} aria-label="bloxup.shop home">
+          <img src={rocketIcon} alt="" />
+          <span>bloxup.shop</span>
+        </a>
+
+        <span className="auth-card__eyebrow">Email login</span>
+        <h1>{step === 'done' ? 'You are in.' : 'Sign in with a code'}</h1>
+        <p>
+          Enter your email and we send a 6-digit login code from <strong>help@bloxup.shop</strong>.
+          No password needed.
+        </p>
+
+        {step === 'email' && (
+          <form className="auth-form" onSubmit={submitEmail}>
+            <label htmlFor="auth-email">Email address</label>
+            <input
+              id="auth-email"
+              type="email"
+              autoComplete="email"
+              placeholder="you@example.com"
+              value={email}
+              onChange={(event) => setEmail(event.target.value)}
+              required
+            />
+            <button type="submit" disabled={isBusy}>{isBusy ? 'Sending...' : 'Send 6-digit code'}</button>
+          </form>
+        )}
+
+        {step === 'code' && (
+          <form className="auth-form" onSubmit={submitCode}>
+            <label htmlFor="auth-code">6-digit code</label>
+            <input
+              id="auth-code"
+              type="text"
+              inputMode="numeric"
+              autoComplete="one-time-code"
+              pattern="[0-9]{6}"
+              maxLength="6"
+              placeholder="000000"
+              value={code}
+              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
+              required
+            />
+            <button type="submit" disabled={isBusy}>{isBusy ? 'Checking...' : 'Verify and sign in'}</button>
+            <button className="auth-form__ghost" type="button" disabled={isBusy} onClick={() => setStep('email')}>
+              Use another email
+            </button>
+          </form>
+        )}
+
+        {step === 'done' && (
+          <div className="auth-signed-in">
+            <span>Signed in as</span>
+            <strong>{user?.email}</strong>
+            <button type="button" disabled={isBusy} onClick={logout}>{isBusy ? 'Signing out...' : 'Log out'}</button>
+          </div>
+        )}
+
+        {status && <p className="auth-message auth-message--ok">{status}</p>}
+        {error && <p className="auth-message auth-message--error">{error}</p>}
+      </section>
+    </main>
+  )
+}
+
 function PolicyLoader({ label = 'Loading page' }) {
   return (
     <div className="policy-loader" role="status" aria-label={label}>
@@ -794,6 +961,7 @@ function App() {
   const route = window.location.pathname.toLowerCase()
   const policyPage = policyPages[route]
   const productPage = servicePages[route]
+  const isAuthPage = route === '/sign-in' || route === '/sign-up'
   const [isRouteLoading, setIsRouteLoading] = useState(false)
 
   useEffect(() => {
@@ -823,7 +991,9 @@ function App() {
     <div className="site-shell">
       {isRouteLoading && <PolicyLoader label="Loading service page" />}
       <Header />
-      {productPage ? (
+      {isAuthPage ? (
+        <AuthPage />
+      ) : productPage ? (
         <ProductPage page={productPage} />
       ) : policyPage ? (
         <PolicyPage page={policyPage} />

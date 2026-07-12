@@ -925,6 +925,199 @@ body {
   border-left: 1px solid #dfe7da;
 }
 
+.auth-page {
+  min-height: 100svh;
+  display: grid;
+  place-items: center;
+  padding: clamp(154px, 16vw, 210px) clamp(18px, 5vw, 72px) clamp(72px, 8vw, 116px);
+  background:
+    radial-gradient(circle at 50% 20%, rgba(170, 255, 29, 0.28), transparent 34%),
+    var(--white);
+}
+
+.auth-card {
+  width: min(520px, 100%);
+  display: grid;
+  gap: 18px;
+  padding: clamp(24px, 5vw, 42px);
+  border: 1px solid #dfe7da;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 28px 70px rgba(7, 16, 6, 0.09);
+}
+
+.auth-card__brand {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 10px;
+  color: #071006;
+  font-family: Arial Black, Arial, Helvetica, sans-serif;
+  font-size: 1.08rem;
+  font-weight: 950;
+  letter-spacing: -0.045em;
+  text-decoration: none;
+}
+
+.auth-card__brand img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+  image-rendering: pixelated;
+}
+
+.auth-card__eyebrow {
+  width: fit-content;
+  padding: 7px 10px;
+  border: 1px solid #31e95a;
+  border-radius: 999px;
+  color: #071006;
+  background: #efffd8;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.72rem;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.auth-card h1 {
+  margin: 0;
+  color: #071006;
+  font-family: Arial Black, Arial, Helvetica, sans-serif;
+  font-size: clamp(2.2rem, 7vw, 4.1rem);
+  font-weight: 950;
+  letter-spacing: -0.055em;
+  line-height: 0.92;
+}
+
+.auth-card p {
+  margin: 0;
+  color: #53604e;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 680;
+  line-height: 1.55;
+}
+
+.auth-card p strong {
+  color: #071006;
+}
+
+.auth-form {
+  display: grid;
+  gap: 12px;
+}
+
+.auth-form label {
+  color: #071006;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.78rem;
+  font-weight: 950;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.auth-form input {
+  width: 100%;
+  min-height: 58px;
+  padding: 0 16px;
+  border: 1px solid #cddcc7;
+  border-radius: 8px;
+  color: #071006;
+  background: #fbfff7;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 1rem;
+  font-weight: 780;
+  outline: none;
+}
+
+.auth-form input:focus {
+  border-color: #25ed48;
+  box-shadow: 0 0 0 4px rgba(37, 237, 72, 0.16);
+}
+
+.auth-form button,
+.auth-signed-in button {
+  min-height: 56px;
+  border: 2px solid #071006;
+  border-radius: 999px;
+  color: #071006;
+  background: #25ed48;
+  box-shadow: 0 8px 0 #071006;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+  font-size: 0.95rem;
+  font-weight: 950;
+  cursor: pointer;
+  transition:
+    transform 150ms ease,
+    box-shadow 150ms ease,
+    background 150ms ease;
+}
+
+.auth-form button:hover,
+.auth-form button:focus-visible,
+.auth-signed-in button:hover,
+.auth-signed-in button:focus-visible {
+  background: #aaff1d;
+  outline: none;
+  transform: translateY(-1px);
+  box-shadow: 0 7px 0 #071006;
+}
+
+.auth-form button:disabled,
+.auth-signed-in button:disabled {
+  cursor: wait;
+  opacity: 0.68;
+}
+
+.auth-form__ghost {
+  border-color: #cddcc7 !important;
+  background: #ffffff !important;
+  box-shadow: none !important;
+}
+
+.auth-signed-in {
+  display: grid;
+  gap: 12px;
+  padding: 18px;
+  border: 1px solid #31e95a;
+  border-radius: 10px;
+  background: #f4fff0;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.auth-signed-in span {
+  color: #53604e;
+  font-size: 0.78rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.auth-signed-in strong {
+  color: #071006;
+  font-size: 1.08rem;
+  overflow-wrap: anywhere;
+}
+
+.auth-message {
+  padding: 12px 14px;
+  border-radius: 8px;
+  font-size: 0.92rem !important;
+  font-weight: 850 !important;
+}
+
+.auth-message--ok {
+  border: 1px solid #31e95a;
+  background: #efffd8;
+  color: #071006 !important;
+}
+
+.auth-message--error {
+  border: 1px solid #ff6b6b;
+  background: #fff0f0;
+  color: #8a1010 !important;
+}
+
 .policy-loader {
   position: fixed;
   z-index: 80;
