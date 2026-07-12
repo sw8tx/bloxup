@@ -15,12 +15,7 @@
       "id": "4828f892918541e6a9299d9d823b9e8e"
     }
   ],
-  "send_email": [
-    {
-      "name": "EMAIL",
-      "allowed_sender_addresses": [
-        "help@bloxup.shop"
-      ]
-    }
-  ]
+  "vars": {
+    "EMAIL_FROM": "bloxup <help@bloxup.shop>"
+  }
 }

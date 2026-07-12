@@ -1,5 +1,6 @@
 const FROM_EMAIL = 'help@bloxup.shop'
 const FROM_NAME = 'bloxup'
+const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 const SESSION_COOKIE = 'bloxup_session'
 const CODE_TTL_SECONDS = 600
 const RATE_LIMIT_SECONDS = 60
@@ -110,13 +111,50 @@ function buildEmail(code) {
   }
 }
 
+async function sendLoginEmail(email, emailContent, env) {
+  if (!env.RESEND_API_KEY) {
+    return {
+      ok: false,
+      setup: true,
+      message: 'Free email provider is not connected yet. Add RESEND_API_KEY as a Worker secret after verifying bloxup.shop in Resend.',
+    }
+  }
+
+  const response = await fetch(RESEND_ENDPOINT, {
+    method: 'POST',
+    headers: {
+      authorization: `Bearer ${env.RESEND_API_KEY}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      from: env.EMAIL_FROM || `${FROM_NAME} <${FROM_EMAIL}>`,
+      to: [email],
+      subject: emailContent.subject,
+      html: emailContent.html,
+      text: emailContent.text,
+      reply_to: FROM_EMAIL,
+    }),
+  })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    return {
+      ok: false,
+      status: response.status,
+      message: data?.message || data?.error || 'Resend could not send the login email.',
+    }
+  }
+
+  return {
+    ok: true,
+    id: data.id,
+  }
+}
+
 async function requestCode(request, env) {
   if (!env.AUTH_KV) {
     return badRequest('Auth storage is not configured yet.', 500)
-  }
-
-  if (!env.EMAIL) {
-    return badRequest('Email sending is not configured yet.', 500)
   }
 
   const body = await readJson(request)
@@ -149,33 +187,13 @@ async function requestCode(request, env) {
 
   const emailContent = buildEmail(code)
 
-  try {
-    await env.EMAIL.send({
-      to: email,
-      from: { email: FROM_EMAIL, name: FROM_NAME },
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
-    })
-  } catch (error) {
+  const sendResult = await sendLoginEmail(email, emailContent, env)
+
+  if (!sendResult.ok) {
     await env.AUTH_KV.delete(codeKey)
     await env.AUTH_KV.delete(rateKey)
 
-    const setupErrors = new Set([
-      'E_INTERNAL_SERVER_ERROR',
-      'E_SENDER_NOT_VERIFIED',
-      'E_SENDER_DOMAIN_NOT_AVAILABLE',
-    ])
-
-    if (setupErrors.has(error?.code)) {
-      return badRequest(
-        'Email sending is not fully enabled for bloxup.shop yet. Please verify the Cloudflare Email Sending DNS records, then try again.',
-        502,
-      )
-    }
-
-    const codeText = error?.code ? ` (${error.code})` : ''
-    return badRequest(`Email could not be sent${codeText}.`, 502)
+    return badRequest(sendResult.message, sendResult.setup ? 500 : 502)
   }
 
   return json({ ok: true, message: 'Code sent. Check your inbox.' })
