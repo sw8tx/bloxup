@@ -29,6 +29,12 @@ body {
   padding: clamp(14px, 2.4vw, 28px) clamp(18px, 4vw, 58px);
 }
 
+.header-lockup {
+  display: grid;
+  justify-items: start;
+  gap: 8px;
+}
+
 .brand {
   display: inline-flex;
   align-items: center;
@@ -39,6 +45,63 @@ body {
   font-weight: 950;
   letter-spacing: -0.045em;
   text-decoration: none;
+}
+
+.header-actions {
+  display: grid;
+  width: min(220px, 44vw);
+  gap: 6px;
+  margin-left: 66px;
+  font-family: Inter, ui-sans-serif, system-ui, sans-serif;
+}
+
+.header-actions__row {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+}
+
+.header-actions a {
+  display: grid;
+  min-height: 32px;
+  place-items: center;
+  border: 1px solid #ccdec5;
+  border-radius: 999px;
+  color: #071006;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow: 0 8px 20px rgba(7, 16, 6, 0.055);
+  font-size: 0.75rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  text-decoration: none;
+  transition:
+    transform 150ms ease,
+    border-color 150ms ease,
+    background 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.header-actions a:hover,
+.header-actions a:focus-visible {
+  border-color: #25ed48;
+  background: #efffd8;
+  box-shadow: 0 10px 24px rgba(37, 237, 72, 0.14);
+  outline: none;
+  transform: translateY(-1px);
+}
+
+.header-actions__cart {
+  min-height: 36px;
+  background: #25ed48 !important;
+  border-color: #071006 !important;
+  box-shadow: 0 8px 0 #071006 !important;
+  text-transform: uppercase;
+}
+
+.header-actions__cart:hover,
+.header-actions__cart:focus-visible {
+  background: #aaff1d !important;
+  box-shadow: 0 7px 0 #071006 !important;
 }
 
 .brand__launch {
@@ -1245,10 +1308,30 @@ body {
     padding: 12px 14px;
   }
 
+  .header-lockup {
+    flex: 0 0 100%;
+    gap: 6px;
+  }
+
   .brand {
     flex: 0 0 100%;
     gap: 7px;
     font-size: 0.82rem;
+  }
+
+  .header-actions {
+    width: min(214px, calc(100vw - 92px));
+    margin-left: 51px;
+  }
+
+  .header-actions a {
+    min-height: 29px;
+    font-size: 0.68rem;
+  }
+
+  .header-actions__cart {
+    min-height: 33px;
+    box-shadow: 0 6px 0 #071006 !important;
   }
 
   .brand__launch {

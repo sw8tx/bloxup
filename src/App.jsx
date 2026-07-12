@@ -421,17 +421,27 @@ function Header() {
 
   return (
     <header className="site-header">
-      <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
-        <span className="brand__launch">
-          <span className="brand__smoke brand__smoke--one" />
-          <span className="brand__smoke brand__smoke--two" />
-          <span className="brand__smoke brand__smoke--three" />
-          <span className="brand__smoke brand__smoke--four" />
-          <span className="brand__smoke brand__smoke--five" />
-          <img src={rocketIcon} alt="" />
-        </span>
-        <span>bloxup.shop</span>
-      </a>
+      <div className="header-lockup">
+        <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
+          <span className="brand__launch">
+            <span className="brand__smoke brand__smoke--one" />
+            <span className="brand__smoke brand__smoke--two" />
+            <span className="brand__smoke brand__smoke--three" />
+            <span className="brand__smoke brand__smoke--four" />
+            <span className="brand__smoke brand__smoke--five" />
+            <img src={rocketIcon} alt="" />
+          </span>
+          <span>bloxup.shop</span>
+        </a>
+
+        <div className="header-actions" aria-label="Account actions">
+          <div className="header-actions__row">
+            <a href="/sign-in">Log in</a>
+            <a href="/sign-up">Sign in</a>
+          </div>
+          <a className="header-actions__cart" href="/cart">Shopping cart</a>
+        </div>
+      </div>
 
       <nav className="service-nav" aria-label="Services" ref={navRef}>
         {serviceGroups.map((group) => (
