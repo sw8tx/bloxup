@@ -63,15 +63,20 @@ const orderEvents = [
 ]
 
 const servicePricing = {
-  followers: 3,
-  subscribers: 3,
-  'community-member': 3,
   views: 1,
   likes: 2.5,
   reposts: 9,
   saves: 3.5,
   shares: 4.5,
   comments: 6,
+}
+
+const platformServicePricing = {
+  'tiktok-followers': 3,
+  'youtube-subscribers': 5,
+  'twitch-followers': 1,
+  'roblox-followers': 3.5,
+  'roblox-community-member': 5.5,
 }
 
 const serviceDescriptions = {
@@ -89,7 +94,8 @@ const serviceDescriptions = {
 const servicePages = serviceGroups.reduce((pages, group) => {
   group.services.forEach((service) => {
     const serviceKey = service.toLowerCase().replaceAll(' ', '-')
-    const rate = servicePricing[serviceKey]
+    const platformKey = group.name.toLowerCase()
+    const rate = platformServicePricing[`${platformKey}-${serviceKey}`] ?? servicePricing[serviceKey]
 
     if (!rate) {
       return
