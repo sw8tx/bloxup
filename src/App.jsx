@@ -479,9 +479,36 @@ function OrderNotifications() {
   )
 }
 
+function PolicyLoader() {
+  return (
+    <div className="policy-loader" role="status" aria-label="Loading legal page">
+      <span className="policy-loader__smoke policy-loader__smoke--one" />
+      <span className="policy-loader__smoke policy-loader__smoke--two" />
+      <span className="policy-loader__smoke policy-loader__smoke--three" />
+      <img className="policy-loader__logo" src={rocketIcon} alt="" />
+    </div>
+  )
+}
+
 function PolicyPage({ page }) {
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [showLoader, setShowLoader] = useState(!reduceMotion)
+
+  useEffect(() => {
+    if (reduceMotion) {
+      return undefined
+    }
+
+    const loaderTimer = window.setTimeout(() => {
+      setShowLoader(false)
+    }, 1180)
+
+    return () => window.clearTimeout(loaderTimer)
+  }, [reduceMotion, page.title])
+
   return (
     <main className="policy-page">
+      {showLoader && <PolicyLoader />}
       <section className="policy-page__inner">
         <a className="policy-page__back" href={baseUrl}>Back to bloxup.shop</a>
         <span className="policy-page__eyebrow">{page.eyebrow}</span>
