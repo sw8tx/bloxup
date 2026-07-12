@@ -1,11 +1,10 @@
-const FROM_EMAIL = 'help@bloxup.shop'
-const FROM_NAME = 'bloxup'
-const RESEND_ENDPOINT = 'https://api.resend.com/emails'
 const SESSION_COOKIE = 'bloxup_session'
-const CODE_TTL_SECONDS = 600
-const RATE_LIMIT_SECONDS = 60
+const OAUTH_STATE_COOKIE = 'bloxup_discord_state'
 const SESSION_TTL_SECONDS = 60 * 60 * 24 * 30
-const MAX_ATTEMPTS = 5
+const STATE_TTL_SECONDS = 60 * 10
+const DISCORD_API = 'https://discord.com/api/v10'
+const DISCORD_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize'
+const DEFAULT_DISCORD_INVITE_URL = 'https://discord.gg/mtPQYgaYu'
 
 function json(data, init = {}) {
   return new Response(JSON.stringify(data), {
@@ -17,20 +16,14 @@ function json(data, init = {}) {
   })
 }
 
-function badRequest(message, status = 400) {
-  return json({ ok: false, message }, { status })
-}
-
-function normalizeEmail(value) {
-  return String(value || '').trim().toLowerCase()
-}
-
-function isValidEmail(email) {
-  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email) && email.length <= 254
-}
-
-function generateCode() {
-  return String(crypto.getRandomValues(new Uint32Array(1))[0] % 1000000).padStart(6, '0')
+function redirect(location, init = {}) {
+  return new Response(null, {
+    status: init.status || 302,
+    headers: {
+      location,
+      ...init.headers,
+    },
+  })
 }
 
 function generateToken() {
@@ -39,227 +32,184 @@ function generateToken() {
   return [...bytes].map((byte) => byte.toString(16).padStart(2, '0')).join('')
 }
 
-async function sha256(value) {
-  const data = new TextEncoder().encode(value)
-  const digest = await crypto.subtle.digest('SHA-256', data)
-  return [...new Uint8Array(digest)].map((byte) => byte.toString(16).padStart(2, '0')).join('')
-}
-
-async function readJson(request) {
-  try {
-    return await request.json()
-  } catch {
-    return null
-  }
-}
-
 function getCookie(request, name) {
   const cookie = request.headers.get('cookie') || ''
   const match = cookie.match(new RegExp(`(?:^|; )${name}=([^;]+)`))
   return match ? decodeURIComponent(match[1]) : ''
 }
 
-function sessionCookie(token) {
-  return `${SESSION_COOKIE}=${encodeURIComponent(token)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${SESSION_TTL_SECONDS}`
+function cookie(name, value, maxAge) {
+  return `${name}=${encodeURIComponent(value)}; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=${maxAge}`
 }
 
-function clearSessionCookie() {
-  return `${SESSION_COOKIE}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
+function clearCookie(name) {
+  return `${name}=; Path=/; HttpOnly; Secure; SameSite=Lax; Max-Age=0`
 }
 
-function escapeHtml(value) {
-  return String(value)
-    .replaceAll('&', '&amp;')
-    .replaceAll('<', '&lt;')
-    .replaceAll('>', '&gt;')
-    .replaceAll('"', '&quot;')
-    .replaceAll("'", '&#039;')
+function getOrigin(request) {
+  const url = new URL(request.url)
+  return `${url.protocol}//${url.host}`
 }
 
-function buildEmail(code) {
-  const safeCode = escapeHtml(code)
+function getRedirectUri(request, env) {
+  return env.DISCORD_REDIRECT_URI || `${getOrigin(request)}/api/auth/discord/callback`
+}
+
+function avatarUrl(user) {
+  if (!user?.avatar) {
+    return null
+  }
+
+  const extension = user.avatar.startsWith('a_') ? 'gif' : 'png'
+  return `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.${extension}?size=128`
+}
+
+function publicUser(user) {
+  if (!user) {
+    return null
+  }
 
   return {
-    subject: `${code} is your bloxup login code`,
-    text: [
-      `Your bloxup login code is ${code}.`,
-      '',
-      'This code expires in 10 minutes.',
-      'If you did not request this, you can ignore this email.',
-    ].join('\n'),
-    html: `<!doctype html>
-      <html>
-        <body style="margin:0;background:#fbfff7;font-family:Arial,Helvetica,sans-serif;color:#071006;">
-          <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background:#fbfff7;padding:32px 16px;">
-            <tr>
-              <td align="center">
-                <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:520px;background:#ffffff;border:1px solid #dfe7da;border-radius:18px;padding:28px;">
-                  <tr>
-                    <td>
-                      <h1 style="margin:0 0 10px;font-size:28px;letter-spacing:-1px;">bloxup.shop</h1>
-                      <p style="margin:0 0 22px;color:#53604e;font-size:15px;line-height:1.5;">Use this 6-digit code to finish signing in.</p>
-                      <div style="display:inline-block;background:#aaff1d;border:2px solid #071006;border-radius:14px;padding:16px 22px;font-size:34px;font-weight:900;letter-spacing:8px;">${safeCode}</div>
-                      <p style="margin:22px 0 0;color:#53604e;font-size:14px;line-height:1.5;">This code expires in 10 minutes. If you did not request it, ignore this email.</p>
-                    </td>
-                  </tr>
-                </table>
-              </td>
-            </tr>
-          </table>
-        </body>
-      </html>`,
+    id: user.id,
+    username: user.username,
+    globalName: user.global_name || user.globalName || user.username,
+    discriminator: user.discriminator,
+    avatar: avatarUrl(user),
+    joinedDiscord: Boolean(user.joinedDiscord),
   }
 }
 
-async function sendLoginEmail(email, emailContent, env) {
-  if (!env.RESEND_API_KEY) {
-    return {
-      ok: false,
-      setup: true,
-      message: 'Free email provider is not connected yet. Add RESEND_API_KEY as a Worker secret after verifying bloxup.shop in Resend.',
-    }
+async function startDiscordLogin(request, env) {
+  if (!env.DISCORD_CLIENT_ID || !env.DISCORD_CLIENT_SECRET) {
+    return redirect('/sign-in?discord=setup')
   }
 
-  const response = await fetch(RESEND_ENDPOINT, {
+  const state = generateToken()
+  await env.AUTH_KV?.put(`oauth_state:${state}`, '1', { expirationTtl: STATE_TTL_SECONDS })
+
+  const authorizeUrl = new URL(DISCORD_AUTHORIZE_URL)
+  authorizeUrl.searchParams.set('client_id', env.DISCORD_CLIENT_ID)
+  authorizeUrl.searchParams.set('redirect_uri', getRedirectUri(request, env))
+  authorizeUrl.searchParams.set('response_type', 'code')
+  authorizeUrl.searchParams.set('scope', 'identify guilds.join')
+  authorizeUrl.searchParams.set('state', state)
+  authorizeUrl.searchParams.set('prompt', 'consent')
+
+  return redirect(authorizeUrl.toString(), {
+    headers: {
+      'set-cookie': cookie(OAUTH_STATE_COOKIE, state, STATE_TTL_SECONDS),
+    },
+  })
+}
+
+async function exchangeCodeForToken(code, request, env) {
+  const body = new URLSearchParams()
+  body.set('client_id', env.DISCORD_CLIENT_ID)
+  body.set('client_secret', env.DISCORD_CLIENT_SECRET)
+  body.set('grant_type', 'authorization_code')
+  body.set('code', code)
+  body.set('redirect_uri', getRedirectUri(request, env))
+
+  const response = await fetch(`${DISCORD_API}/oauth2/token`, {
     method: 'POST',
     headers: {
-      authorization: `Bearer ${env.RESEND_API_KEY}`,
-      'content-type': 'application/json',
+      'content-type': 'application/x-www-form-urlencoded',
     },
-    body: JSON.stringify({
-      from: env.EMAIL_FROM || `${FROM_NAME} <${FROM_EMAIL}>`,
-      to: [email],
-      subject: emailContent.subject,
-      html: emailContent.html,
-      text: emailContent.text,
-      reply_to: FROM_EMAIL,
-    }),
+    body,
   })
 
   const data = await response.json().catch(() => ({}))
 
   if (!response.ok) {
-    return {
-      ok: false,
-      status: response.status,
-      message: data?.message || data?.error || 'Resend could not send the login email.',
-    }
+    throw new Error(data.error_description || data.error || 'Discord token exchange failed.')
   }
 
-  return {
-    ok: true,
-    id: data.id,
-  }
+  return data
 }
 
-async function requestCode(request, env) {
-  if (!env.AUTH_KV) {
-    return badRequest('Auth storage is not configured yet.', 500)
-  }
-
-  const body = await readJson(request)
-  const email = normalizeEmail(body?.email)
-
-  if (!isValidEmail(email)) {
-    return badRequest('Enter a valid email address.')
-  }
-
-  const rateKey = `rate:${email}`
-  const isLimited = await env.AUTH_KV.get(rateKey)
-
-  if (isLimited) {
-    return badRequest('Wait a minute before requesting another code.', 429)
-  }
-
-  const code = generateCode()
-  const salt = generateToken()
-  const codeHash = await sha256(`${email}:${code}:${salt}`)
-  const codeKey = `code:${email}`
-
-  await env.AUTH_KV.put(codeKey, JSON.stringify({
-    codeHash,
-    salt,
-    attempts: 0,
-    createdAt: Date.now(),
-  }), { expirationTtl: CODE_TTL_SECONDS })
-
-  await env.AUTH_KV.put(rateKey, '1', { expirationTtl: RATE_LIMIT_SECONDS })
-
-  const emailContent = buildEmail(code)
-
-  const sendResult = await sendLoginEmail(email, emailContent, env)
-
-  if (!sendResult.ok) {
-    await env.AUTH_KV.delete(codeKey)
-    await env.AUTH_KV.delete(rateKey)
-
-    return badRequest(sendResult.message, sendResult.setup ? 500 : 502)
-  }
-
-  return json({ ok: true, message: 'Code sent. Check your inbox.' })
-}
-
-async function verifyCode(request, env) {
-  if (!env.AUTH_KV) {
-    return badRequest('Auth storage is not configured yet.', 500)
-  }
-
-  const body = await readJson(request)
-  const email = normalizeEmail(body?.email)
-  const code = String(body?.code || '').trim()
-
-  if (!isValidEmail(email)) {
-    return badRequest('Enter a valid email address.')
-  }
-
-  if (!/^\d{6}$/.test(code)) {
-    return badRequest('Enter the 6-digit code.')
-  }
-
-  const codeKey = `code:${email}`
-  const storedRaw = await env.AUTH_KV.get(codeKey)
-
-  if (!storedRaw) {
-    return badRequest('Code expired. Request a new one.', 410)
-  }
-
-  const stored = JSON.parse(storedRaw)
-
-  if (stored.attempts >= MAX_ATTEMPTS) {
-    await env.AUTH_KV.delete(codeKey)
-    return badRequest('Too many attempts. Request a new code.', 429)
-  }
-
-  const inputHash = await sha256(`${email}:${code}:${stored.salt}`)
-
-  if (inputHash !== stored.codeHash) {
-    await env.AUTH_KV.put(codeKey, JSON.stringify({
-      ...stored,
-      attempts: stored.attempts + 1,
-    }), { expirationTtl: CODE_TTL_SECONDS })
-
-    return badRequest('Wrong code. Try again.', 401)
-  }
-
-  await env.AUTH_KV.delete(codeKey)
-
-  const token = generateToken()
-  const session = {
-    email,
-    createdAt: Date.now(),
-  }
-
-  await env.AUTH_KV.put(`session:${token}`, JSON.stringify(session), { expirationTtl: SESSION_TTL_SECONDS })
-
-  return json({
-    ok: true,
-    message: 'Signed in.',
-    user: { email },
-  }, {
+async function fetchDiscordUser(accessToken) {
+  const response = await fetch(`${DISCORD_API}/users/@me`, {
     headers: {
-      'set-cookie': sessionCookie(token),
+      authorization: `Bearer ${accessToken}`,
     },
   })
+
+  const data = await response.json().catch(() => ({}))
+
+  if (!response.ok) {
+    throw new Error(data.message || 'Could not read Discord profile.')
+  }
+
+  return data
+}
+
+async function joinDiscordGuild(userId, accessToken, env) {
+  if (!env.DISCORD_BOT_TOKEN || !env.DISCORD_GUILD_ID) {
+    return false
+  }
+
+  const response = await fetch(`${DISCORD_API}/guilds/${env.DISCORD_GUILD_ID}/members/${userId}`, {
+    method: 'PUT',
+    headers: {
+      authorization: `Bot ${env.DISCORD_BOT_TOKEN}`,
+      'content-type': 'application/json',
+    },
+    body: JSON.stringify({
+      access_token: accessToken,
+    }),
+  })
+
+  return response.status === 201 || response.status === 204
+}
+
+async function discordCallback(request, env) {
+  const url = new URL(request.url)
+  const code = url.searchParams.get('code')
+  const state = url.searchParams.get('state')
+  const storedState = getCookie(request, OAUTH_STATE_COOKIE)
+
+  if (!code || !state || state !== storedState) {
+    return redirect('/sign-in?discord=state')
+  }
+
+  const stateExists = await env.AUTH_KV?.get(`oauth_state:${state}`)
+  await env.AUTH_KV?.delete(`oauth_state:${state}`)
+
+  if (!stateExists) {
+    return redirect('/sign-in?discord=expired')
+  }
+
+  try {
+    const token = await exchangeCodeForToken(code, request, env)
+    const user = await fetchDiscordUser(token.access_token)
+    const joinedDiscord = await joinDiscordGuild(user.id, token.access_token, env)
+    const sessionToken = generateToken()
+    const sessionUser = {
+      ...user,
+      joinedDiscord,
+      signedInAt: Date.now(),
+    }
+
+    await env.AUTH_KV.put(`session:${sessionToken}`, JSON.stringify(sessionUser), {
+      expirationTtl: SESSION_TTL_SECONDS,
+    })
+
+    const headers = new Headers()
+    headers.append('set-cookie', cookie(SESSION_COOKIE, sessionToken, SESSION_TTL_SECONDS))
+    headers.append('set-cookie', clearCookie(OAUTH_STATE_COOKIE))
+    headers.set('location', joinedDiscord ? '/' : (env.DISCORD_INVITE_URL || DEFAULT_DISCORD_INVITE_URL))
+
+    return new Response(null, {
+      status: 302,
+      headers,
+    })
+  } catch (error) {
+    return redirect(`/sign-in?discord=error&message=${encodeURIComponent(error.message)}`, {
+      headers: {
+        'set-cookie': clearCookie(OAUTH_STATE_COOKIE),
+      },
+    })
+  }
 }
 
 async function getCurrentUser(request, env) {
@@ -280,9 +230,7 @@ async function getCurrentUser(request, env) {
   return json({
     ok: true,
     authenticated: true,
-    user: {
-      email: session.email,
-    },
+    user: publicUser(session),
   })
 }
 
@@ -298,7 +246,7 @@ async function logout(request, env) {
     message: 'Signed out.',
   }, {
     headers: {
-      'set-cookie': clearSessionCookie(),
+      'set-cookie': clearCookie(SESSION_COOKIE),
     },
   })
 }
@@ -307,12 +255,12 @@ export default {
   async fetch(request, env) {
     const url = new URL(request.url)
 
-    if (url.pathname === '/api/auth/request-code' && request.method === 'POST') {
-      return requestCode(request, env)
+    if (url.pathname === '/api/auth/discord/start' && request.method === 'GET') {
+      return startDiscordLogin(request, env)
     }
 
-    if (url.pathname === '/api/auth/verify' && request.method === 'POST') {
-      return verifyCode(request, env)
+    if (url.pathname === '/api/auth/discord/callback' && request.method === 'GET') {
+      return discordCallback(request, env)
     }
 
     if (url.pathname === '/api/auth/me' && request.method === 'GET') {

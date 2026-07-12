@@ -16,6 +16,7 @@
     }
   ],
   "vars": {
-    "EMAIL_FROM": "bloxup <help@bloxup.shop>"
+    "DISCORD_INVITE_URL": "https://discord.gg/mtPQYgaYu",
+    "DISCORD_REDIRECT_URI": "https://bloxup.shop/api/auth/discord/callback"
   }
 }

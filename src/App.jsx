@@ -38,8 +38,7 @@ const footerGroups = [
   {
     title: 'Account',
     links: [
-      ['Sign up', '/sign-up'],
-      ['Sign in', '/sign-in'],
+      ['Sign in with Discord', '/sign-in'],
       ['Help', '/help'],
     ],
   },
@@ -368,6 +367,37 @@ function PlatformIcon({ platform }) {
   )
 }
 
+function HeaderActions() {
+  const [user, setUser] = useState(null)
+
+  useEffect(() => {
+    let isMounted = true
+
+    fetch('/api/auth/me')
+      .then((response) => response.json())
+      .then((data) => {
+        if (isMounted && data.authenticated) {
+          setUser(data.user)
+        }
+      })
+      .catch(() => undefined)
+
+    return () => {
+      isMounted = false
+    }
+  }, [])
+
+  return (
+    <div className="header-actions" aria-label="Account actions">
+      <a className="header-actions__discord" href="/sign-in">
+        {user?.avatar ? <img src={user.avatar} alt="" /> : <span aria-hidden="true">D</span>}
+        {user ? (user.globalName || user.username) : 'Sign in with Discord'}
+      </a>
+      <a className="header-actions__cart" href="/cart">Cart</a>
+    </div>
+  )
+}
+
 function Header() {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
@@ -421,27 +451,17 @@ function Header() {
 
   return (
     <header className="site-header">
-      <div className="header-lockup">
-        <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
-          <span className="brand__launch">
-            <span className="brand__smoke brand__smoke--one" />
-            <span className="brand__smoke brand__smoke--two" />
-            <span className="brand__smoke brand__smoke--three" />
-            <span className="brand__smoke brand__smoke--four" />
-            <span className="brand__smoke brand__smoke--five" />
-            <img src={rocketIcon} alt="" />
-          </span>
-          <span>bloxup.shop</span>
-        </a>
-
-        <div className="header-actions" aria-label="Account actions">
-          <div className="header-actions__row">
-            <a href="/sign-in">Log in</a>
-            <a href="/sign-up">Sign in</a>
-          </div>
-          <a className="header-actions__cart" href="/cart">Shopping cart</a>
-        </div>
-      </div>
+      <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
+        <span className="brand__launch">
+          <span className="brand__smoke brand__smoke--one" />
+          <span className="brand__smoke brand__smoke--two" />
+          <span className="brand__smoke brand__smoke--three" />
+          <span className="brand__smoke brand__smoke--four" />
+          <span className="brand__smoke brand__smoke--five" />
+          <img src={rocketIcon} alt="" />
+        </span>
+        <span>bloxup.shop</span>
+      </a>
 
       <nav className="service-nav" aria-label="Services" ref={navRef}>
         {serviceGroups.map((group) => (
@@ -479,6 +499,8 @@ function Header() {
           </div>
         ))}
       </nav>
+
+      <HeaderActions />
     </header>
   )
 }
@@ -723,9 +745,6 @@ function ProductPage({ page }) {
 }
 
 function AuthPage() {
-  const [email, setEmail] = useState('')
-  const [code, setCode] = useState('')
-  const [step, setStep] = useState('email')
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
   const [user, setUser] = useState(null)
@@ -739,70 +758,26 @@ function AuthPage() {
       .then((data) => {
         if (isMounted && data.authenticated) {
           setUser(data.user)
-          setStep('done')
         }
       })
       .catch(() => undefined)
+
+    const params = new URLSearchParams(window.location.search)
+    const discordStatus = params.get('discord')
+    const discordMessage = params.get('message')
+
+    if (discordStatus === 'error') {
+      setError(discordMessage || 'Discord login failed. Try again.')
+    } else if (discordStatus === 'state' || discordStatus === 'expired') {
+      setError('Discord login expired. Start again.')
+    } else if (discordStatus === 'setup') {
+      setError('Discord login is not connected yet. Add the Discord app secrets to the Worker first.')
+    }
 
     return () => {
       isMounted = false
     }
   }, [])
-
-  const submitEmail = async (event) => {
-    event.preventDefault()
-    setIsBusy(true)
-    setError('')
-    setStatus('')
-
-    try {
-      const response = await fetch('/api/auth/request-code', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email }),
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Could not send code.')
-      }
-
-      setStep('code')
-      setStatus('Code sent. Check your inbox.')
-    } catch (requestError) {
-      setError(requestError.message)
-    } finally {
-      setIsBusy(false)
-    }
-  }
-
-  const submitCode = async (event) => {
-    event.preventDefault()
-    setIsBusy(true)
-    setError('')
-    setStatus('')
-
-    try {
-      const response = await fetch('/api/auth/verify', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ email, code }),
-      })
-      const data = await response.json()
-
-      if (!response.ok) {
-        throw new Error(data.message || 'Could not verify code.')
-      }
-
-      setUser(data.user)
-      setStep('done')
-      setStatus('You are signed in.')
-    } catch (verifyError) {
-      setError(verifyError.message)
-    } finally {
-      setIsBusy(false)
-    }
-  }
 
   const logout = async () => {
     setIsBusy(true)
@@ -811,8 +786,6 @@ function AuthPage() {
     try {
       await fetch('/api/auth/logout', { method: 'POST' })
       setUser(null)
-      setCode('')
-      setStep('email')
       setStatus('Signed out.')
     } catch {
       setError('Could not sign out.')
@@ -829,55 +802,27 @@ function AuthPage() {
           <span>bloxup.shop</span>
         </a>
 
-        <span className="auth-card__eyebrow">Email login</span>
-        <h1>{step === 'done' ? 'You are in.' : 'Sign in with a code'}</h1>
+        <span className="auth-card__eyebrow">Discord login</span>
+        <h1>{user ? 'You are in.' : 'Sign in with Discord'}</h1>
         <p>
-          Enter your email and we send a 6-digit login code from <strong>help@bloxup.shop</strong>.
-          No password needed.
+          Connect your Discord profile. After login we try to connect you with the bot and join the bloxup server.
         </p>
 
-        {step === 'email' && (
-          <form className="auth-form" onSubmit={submitEmail}>
-            <label htmlFor="auth-email">Email address</label>
-            <input
-              id="auth-email"
-              type="email"
-              autoComplete="email"
-              placeholder="you@example.com"
-              value={email}
-              onChange={(event) => setEmail(event.target.value)}
-              required
-            />
-            <button type="submit" disabled={isBusy}>{isBusy ? 'Sending...' : 'Send 6-digit code'}</button>
-          </form>
+        {!user && (
+          <a className="discord-login-button" href="/api/auth/discord/start">
+            <span className="discord-login-button__mark">D</span>
+            Sign in with Discord
+          </a>
         )}
 
-        {step === 'code' && (
-          <form className="auth-form" onSubmit={submitCode}>
-            <label htmlFor="auth-code">6-digit code</label>
-            <input
-              id="auth-code"
-              type="text"
-              inputMode="numeric"
-              autoComplete="one-time-code"
-              pattern="[0-9]{6}"
-              maxLength="6"
-              placeholder="000000"
-              value={code}
-              onChange={(event) => setCode(event.target.value.replace(/\D/g, '').slice(0, 6))}
-              required
-            />
-            <button type="submit" disabled={isBusy}>{isBusy ? 'Checking...' : 'Verify and sign in'}</button>
-            <button className="auth-form__ghost" type="button" disabled={isBusy} onClick={() => setStep('email')}>
-              Use another email
-            </button>
-          </form>
-        )}
-
-        {step === 'done' && (
+        {user && (
           <div className="auth-signed-in">
             <span>Signed in as</span>
-            <strong>{user?.email}</strong>
+            <div className="auth-signed-in__profile">
+              {user.avatar && <img src={user.avatar} alt="" />}
+              <strong>{user.globalName || user.username}</strong>
+            </div>
+            <small>{user.joinedDiscord ? 'Discord server connected.' : 'Signed in. Server invite opened if auto-join was not available.'}</small>
             <button type="button" disabled={isBusy} onClick={logout}>{isBusy ? 'Signing out...' : 'Log out'}</button>
           </div>
         )}
