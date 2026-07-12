@@ -153,13 +153,27 @@ async function requestCode(request, env) {
     await env.EMAIL.send({
       to: email,
       from: { email: FROM_EMAIL, name: FROM_NAME },
-      replyTo: FROM_EMAIL,
       subject: emailContent.subject,
       html: emailContent.html,
       text: emailContent.text,
     })
   } catch (error) {
     await env.AUTH_KV.delete(codeKey)
+    await env.AUTH_KV.delete(rateKey)
+
+    const setupErrors = new Set([
+      'E_INTERNAL_SERVER_ERROR',
+      'E_SENDER_NOT_VERIFIED',
+      'E_SENDER_DOMAIN_NOT_AVAILABLE',
+    ])
+
+    if (setupErrors.has(error?.code)) {
+      return badRequest(
+        'Email sending is not fully enabled for bloxup.shop yet. Please verify the Cloudflare Email Sending DNS records, then try again.',
+        502,
+      )
+    }
+
     const codeText = error?.code ? ` (${error.code})` : ''
     return badRequest(`Email could not be sent${codeText}.`, 502)
   }
