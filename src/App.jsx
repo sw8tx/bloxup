@@ -392,6 +392,33 @@ function Header() {
     }
   }, [])
 
+  const handleServiceLink = (event, href) => {
+    if (
+      event.defaultPrevented
+      || event.button !== 0
+      || event.metaKey
+      || event.altKey
+      || event.ctrlKey
+      || event.shiftKey
+    ) {
+      return
+    }
+
+    event.preventDefault()
+    setOpenMenu(null)
+
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      window.location.href = href
+      return
+    }
+
+    window.dispatchEvent(new CustomEvent('bloxup:route-loading'))
+
+    window.setTimeout(() => {
+      window.location.href = href
+    }, 560)
+  }
+
   return (
     <header className="site-header">
       <a className="brand" href={baseUrl} aria-label="bloxup.shop home">
@@ -425,7 +452,11 @@ function Header() {
                 <strong>{group.name}</strong>
                 <div className="service-menu__links">
                   {group.services.map((service) => (
-                    <a href={servicePath(group.name, service)} key={service}>
+                    <a
+                      href={servicePath(group.name, service)}
+                      key={service}
+                      onClick={(event) => handleServiceLink(event, servicePath(group.name, service))}
+                    >
                       <span className="service-menu__icon">
                         <PlatformIcon platform={group.name} />
                       </span>
@@ -549,10 +580,25 @@ function ProductPage({ page }) {
   const presets = [1000, 2500, 5000, 10000, 25000, 50000]
   const maxAmount = page.serviceKey === 'views' ? 100000 : 50000
   const step = page.serviceKey === 'views' ? 500 : 250
+  const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches
+  const [showLoader, setShowLoader] = useState(!reduceMotion)
   const [amount, setAmount] = useState(1000)
   const price = (amount / 1000) * page.rate
   const unitLabel = page.service.toLowerCase()
   const bestPreset = page.serviceKey === 'views' ? 10000 : 5000
+
+  useEffect(() => {
+    if (reduceMotion) {
+      return undefined
+    }
+
+    setShowLoader(true)
+    const loaderTimer = window.setTimeout(() => {
+      setShowLoader(false)
+    }, 1180)
+
+    return () => window.clearTimeout(loaderTimer)
+  }, [reduceMotion, page.platform, page.service])
 
   const updateAmount = (nextAmount) => {
     setAmount(Math.min(maxAmount, Math.max(1000, Math.round(nextAmount / step) * step)))
@@ -560,6 +606,7 @@ function ProductPage({ page }) {
 
   return (
     <main className="product-page">
+      {showLoader && <PolicyLoader label={`Loading ${page.platform} ${page.service}`} />}
       <section className="product-hero">
         <nav className="product-breadcrumb" aria-label="Breadcrumb">
           <a href={baseUrl}>Home</a>
@@ -665,9 +712,9 @@ function ProductPage({ page }) {
   )
 }
 
-function PolicyLoader() {
+function PolicyLoader({ label = 'Loading page' }) {
   return (
-    <div className="policy-loader" role="status" aria-label="Loading legal page">
+    <div className="policy-loader" role="status" aria-label={label}>
       <span className="policy-loader__smoke policy-loader__smoke--one" />
       <span className="policy-loader__smoke policy-loader__smoke--two" />
       <span className="policy-loader__smoke policy-loader__smoke--three" />
@@ -737,9 +784,34 @@ function App() {
   const route = window.location.pathname.toLowerCase()
   const policyPage = policyPages[route]
   const productPage = servicePages[route]
+  const [isRouteLoading, setIsRouteLoading] = useState(false)
+
+  useEffect(() => {
+    let loaderTimer
+
+    const showRouteLoader = () => {
+      if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+        return
+      }
+
+      window.clearTimeout(loaderTimer)
+      setIsRouteLoading(true)
+      loaderTimer = window.setTimeout(() => {
+        setIsRouteLoading(false)
+      }, 1300)
+    }
+
+    window.addEventListener('bloxup:route-loading', showRouteLoader)
+
+    return () => {
+      window.clearTimeout(loaderTimer)
+      window.removeEventListener('bloxup:route-loading', showRouteLoader)
+    }
+  }, [])
 
   return (
     <div className="site-shell">
+      {isRouteLoading && <PolicyLoader label="Loading service page" />}
       <Header />
       {productPage ? (
         <ProductPage page={productPage} />
