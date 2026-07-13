@@ -810,6 +810,9 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
   const fee = payable * selectedPayment.feeRate
   const total = payable + fee
   const cryptoAmount = total / (rates[selectedPayment.id] || fallbackCryptoRatesEur[selectedPayment.id] || 1)
+  const invoicePayment = order?.payment || selectedPayment
+  const invoiceCryptoAmount = Number(invoicePayment.amountCrypto || cryptoAmount)
+  const invoiceAmountLabel = invoicePayment.amountLabel || formatCryptoAmount(invoiceCryptoAmount, invoicePayment.symbol)
   const canCheckout = items.length > 0 && customer.email.trim() && customer.discord.trim() && customer.target.trim()
 
   useEffect(() => {
@@ -960,11 +963,11 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
     void navigator.clipboard?.writeText(value)
   }
 
-  const qrData = encodeURIComponent(`${selectedPayment.address}?amount=${cryptoAmount}`)
+  const qrData = encodeURIComponent(`${invoicePayment.address}?amount=${invoiceCryptoAmount}`)
   const invoiceStatus = paymentStatus?.status === 'paid'
     ? 'Order received. Thank you for your order.'
     : paymentStatus?.txId
-      ? `Waiting for confirmations: ${paymentStatus.confirmations || 0}/${selectedPayment.confirmations}`
+      ? `Waiting for confirmations: ${paymentStatus.confirmations || 0}/${invoicePayment.confirmations || selectedPayment.confirmations}`
       : 'Waiting for your transaction ID.'
 
   return (
@@ -1071,7 +1074,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
           <>
             <div className="cart-panel__head">
               <button className="cart-back" type="button" onClick={() => setStep('payment')}>Back to payment</button>
-              <h2>Pay via {selectedPayment.name}</h2>
+              <h2>Pay via {invoicePayment.name}</h2>
               <p>{invoiceStatus}</p>
             </div>
 
@@ -1080,16 +1083,16 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
                 <label>
                   You pay, fee included
                   <div className="copy-field">
-                    <strong>{formatCryptoAmount(cryptoAmount, selectedPayment.symbol)}</strong>
-                    <button type="button" onClick={() => copyText(String(cryptoAmount))}>Copy</button>
+                    <strong>{invoiceAmountLabel}</strong>
+                    <button type="button" onClick={() => copyText(String(invoiceCryptoAmount))}>Copy</button>
                   </div>
                 </label>
 
                 <label>
                   Address to send funds to
                   <div className="copy-field">
-                    <strong>{selectedPayment.address}</strong>
-                    <button type="button" onClick={() => copyText(selectedPayment.address)}>Copy</button>
+                    <strong>{invoicePayment.address}</strong>
+                    <button type="button" onClick={() => copyText(invoicePayment.address)}>Copy</button>
                   </div>
                 </label>
 
@@ -1100,7 +1103,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
                 <div className="invoice-meta">
                   <span>Order ID <strong>{order?.id}</strong></span>
-                  <span>Confirmations required <strong>{selectedPayment.confirmations}</strong></span>
+                  <span>Confirmations required <strong>{invoicePayment.confirmations || selectedPayment.confirmations}</strong></span>
                   <span>Status <strong>{paymentStatus?.status || 'pending'}</strong></span>
                 </div>
 
@@ -1114,8 +1117,8 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
               <aside className="invoice-qr">
                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${qrData}`} alt="" />
-                <strong>{selectedPayment.symbol}</strong>
-                <span>{selectedPayment.network}</span>
+                <strong>{invoicePayment.symbol}</strong>
+                <span>{invoicePayment.network}</span>
               </aside>
             </div>
           </>

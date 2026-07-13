@@ -7,6 +7,32 @@ const DISCORD_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize'
 const DEFAULT_DISCORD_INVITE_URL = 'https://discord.gg/mtPQYgaYu'
 const ORDER_TTL_SECONDS = 60 * 60 * 24 * 90
 const REQUIRED_CONFIRMATIONS = 6
+const SERVICE_RATES_EUR = {
+  'tiktok-followers': 3,
+  'tiktok-views': 1,
+  'tiktok-likes': 2.5,
+  'tiktok-reposts': 9,
+  'tiktok-saves': 3.5,
+  'tiktok-shares': 4.5,
+  'tiktok-comments': 6,
+  'youtube-subscribers': 5,
+  'youtube-likes': 2.5,
+  'youtube-comments': 6,
+  'twitch-followers': 1,
+  'roblox-followers': 3.5,
+  'roblox-community-member': 5.5,
+}
+const FALLBACK_CRYPTO_RATES_EUR = {
+  bitcoin: 98000,
+  ethereum: 3200,
+  tether: 0.92,
+  usdc: 0.92,
+  litecoin: 88,
+  bnb: 660,
+  solana: 145,
+  tron: 0.26,
+  polygon: 0.22,
+}
 
 const PAYMENT_METHODS = {
   polygon: {
@@ -16,6 +42,7 @@ const PAYMENT_METHODS = {
     address: '0x1e7589c21793286579ffD05E0B5Bcc62A3955fcC',
     checker: 'blockchair',
     blockchair: 'polygon',
+    coinGeckoId: 'matic-network',
   },
   ethereum: {
     name: 'Ethereum',
@@ -24,6 +51,7 @@ const PAYMENT_METHODS = {
     address: '0x1e7589c21793286579ffD05E0B5Bcc62A3955fcC',
     checker: 'blockchair',
     blockchair: 'ethereum',
+    coinGeckoId: 'ethereum',
   },
   tether: {
     name: 'Tether USD',
@@ -32,6 +60,7 @@ const PAYMENT_METHODS = {
     address: '0x1e7589c21793286579ffD05E0B5Bcc62A3955fcC',
     checker: 'blockchair',
     blockchair: 'ethereum',
+    coinGeckoId: 'tether',
   },
   litecoin: {
     name: 'Litecoin',
@@ -40,6 +69,7 @@ const PAYMENT_METHODS = {
     address: 'LenwzShKjfCHftVty1uFWb4Csc4qkjKSQC',
     checker: 'blockchair',
     blockchair: 'litecoin',
+    coinGeckoId: 'litecoin',
   },
   bnb: {
     name: 'BNB',
@@ -48,6 +78,7 @@ const PAYMENT_METHODS = {
     address: '0x1e7589c21793286579ffD05E0B5Bcc62A3955fcC',
     checker: 'blockchair',
     blockchair: 'binance-smart-chain',
+    coinGeckoId: 'binancecoin',
   },
   usdc: {
     name: 'USDC',
@@ -56,6 +87,7 @@ const PAYMENT_METHODS = {
     address: '0x1e7589c21793286579ffD05E0B5Bcc62A3955fcC',
     checker: 'blockchair',
     blockchair: 'ethereum',
+    coinGeckoId: 'usd-coin',
   },
   solana: {
     name: 'Solana',
@@ -64,6 +96,7 @@ const PAYMENT_METHODS = {
     address: 'yCV7UgU4Vm4i3Uh1Sp6FAsLwUh8cNzp2WWHjDEeSpmw',
     checker: 'blockchair',
     blockchair: 'solana',
+    coinGeckoId: 'solana',
   },
   tron: {
     name: 'Tron',
@@ -72,6 +105,7 @@ const PAYMENT_METHODS = {
     address: 'TSPAGNJie5qCdAUf1jidgu5YAnPJM6bKxW',
     checker: 'blockchair',
     blockchair: 'tron',
+    coinGeckoId: 'tron',
   },
   bitcoin: {
     name: 'Bitcoin',
@@ -79,6 +113,7 @@ const PAYMENT_METHODS = {
     network: 'Bitcoin',
     address: 'bc1qndg727ht62smu9v5ftp57t72ssemhqz5pfh84q',
     checker: 'blockstream',
+    coinGeckoId: 'bitcoin',
   },
 }
 
@@ -332,6 +367,15 @@ function money(value) {
   return Number.isFinite(number) ? Math.round(number * 100) / 100 : 0
 }
 
+function slug(value) {
+  return String(value || '').toLowerCase().trim().replaceAll(' ', '-')
+}
+
+function formatCryptoValue(value, symbol) {
+  const decimals = value >= 1 ? 6 : 8
+  return `${Number(value).toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '')} ${symbol}`
+}
+
 function short(value, max = 900) {
   const text = String(value || '').trim()
   return text.length > max ? `${text.slice(0, max - 1)}…` : text
@@ -368,6 +412,43 @@ async function saveOrder(env, order) {
   await env.AUTH_KV.put(orderKey(order.id), JSON.stringify(order), {
     expirationTtl: ORDER_TTL_SECONDS,
   })
+}
+
+async function getCryptoRateEur(methodId, method) {
+  try {
+    const response = await fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${method.coinGeckoId}&vs_currencies=eur`)
+    const data = await response.json()
+    const rate = Number(data?.[method.coinGeckoId]?.eur)
+
+    if (Number.isFinite(rate) && rate > 0) {
+      return rate
+    }
+  } catch {
+    // Use fallback below.
+  }
+
+  return FALLBACK_CRYPTO_RATES_EUR[methodId] || 1
+}
+
+function normalizeOrderItems(items) {
+  return items.slice(0, 10).map((item) => {
+    const platform = short(item.platform, 40)
+    const service = short(item.service, 60)
+    const amount = Math.max(1000, Math.min(100000, Math.round(Number(item.amount || 0) / 250) * 250))
+    const rate = SERVICE_RATES_EUR[`${slug(platform)}-${slug(service)}`]
+
+    if (!rate) {
+      return null
+    }
+
+    return {
+      platform,
+      service,
+      amount,
+      price: money((amount / 1000) * rate),
+      rate,
+    }
+  }).filter(Boolean)
 }
 
 async function sendOrderWebhook(env, event, order) {
@@ -524,32 +605,40 @@ async function createOrder(request, env, ctx) {
   }
 
   const method = PAYMENT_METHODS[body.payment?.id]
+  const items = normalizeOrderItems(body.items)
 
   if (!method) {
     return json({ ok: false, message: 'Unsupported payment method.' }, { status: 400 })
   }
 
+  if (items.length === 0) {
+    return json({ ok: false, message: 'No supported items in cart.' }, { status: 400 })
+  }
+
+  const subtotal = money(items.reduce((sum, item) => sum + item.price, 0))
+  const promoCode = short(body.promoCode, 40).toUpperCase()
+  const discount = promoCode === 'TEST' ? money(subtotal * 0.999) : 0
+  const payable = Math.max(0, subtotal - discount)
+  const fee = money(payable * 0.03)
+  const total = money(payable + fee)
+  const cryptoRate = await getCryptoRateEur(body.payment.id, method)
+  const amountCrypto = total / cryptoRate
+
   const order = {
     id: `BX-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`,
     status: 'pending',
     createdAt: new Date().toISOString(),
-    items: body.items.slice(0, 10).map((item) => ({
-      platform: short(item.platform, 40),
-      service: short(item.service, 60),
-      amount: Number(item.amount || 0),
-      price: money(item.price),
-      rate: money(item.rate),
-    })),
+    items,
     customer: {
       email: short(body.customer?.email, 240),
       discord: short(body.customer?.discord, 240),
       target: short(body.customer?.target, 900),
     },
-    promoCode: short(body.promoCode, 40),
-    subtotal: money(body.subtotal),
-    discount: money(body.discount),
-    fee: money(body.fee),
-    total: money(body.total),
+    promoCode,
+    subtotal,
+    discount,
+    fee,
+    total,
     payment: {
       id: body.payment.id,
       name: method.name,
@@ -557,8 +646,8 @@ async function createOrder(request, env, ctx) {
       network: method.network,
       address: method.address,
       confirmations: REQUIRED_CONFIRMATIONS,
-      amountCrypto: Number(body.payment.amountCrypto || 0),
-      amountLabel: short(body.payment.amountLabel, 80),
+      amountCrypto,
+      amountLabel: formatCryptoValue(amountCrypto, method.symbol),
     },
     paymentStatus: {
       status: 'pending',
