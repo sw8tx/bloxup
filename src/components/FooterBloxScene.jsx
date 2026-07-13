@@ -53,6 +53,8 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
   let frameId
   let isDisposed = false
   let isVisible = true
+  let isCompactViewport = false
+  let isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches
 
   try {
     renderer = new THREE.WebGLRenderer({
@@ -146,7 +148,10 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
       return
     }
 
+    isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches
+    isCompactViewport = width < 180 || height < 130 || isTouchViewport
     renderer.setSize(width, height, false)
+    camera.position.z = isCompactViewport ? 9.4 : 8.4
     camera.aspect = width / height
     camera.updateProjectionMatrix()
   }
@@ -186,9 +191,11 @@ async function createFooterBloxScene({ container, canvas, onReady, isCancelled }
 
       base.scale.x = 1 + Math.sin(phase * Math.PI) * 0.16
       base.material.opacity = 0.34 + (1 - burstAmount) * 0.18
-      group.rotation.y = -0.56 + Math.sin(elapsed * 0.62) * 0.1 + burstAmount * 0.24
-      group.rotation.x = -0.18 + Math.sin(elapsed * 0.52) * 0.05
-      group.position.y = Math.sin(elapsed * 1.1) * 0.05
+      const touchSpin = isTouchViewport ? elapsed * 0.12 : 0
+      group.rotation.y = -0.56 + touchSpin + Math.sin(elapsed * 0.62) * 0.14 + burstAmount * 0.3
+      group.rotation.x = -0.18 + Math.sin(elapsed * 0.52) * 0.07
+      group.rotation.z = -0.06 + Math.sin(elapsed * 0.42) * 0.035
+      group.position.y = Math.sin(elapsed * 1.1) * 0.065
       renderer.render(scene, camera)
     }
 

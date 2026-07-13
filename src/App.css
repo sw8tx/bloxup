@@ -315,6 +315,7 @@ body {
 .rocket-scene {
   position: absolute;
   inset: clamp(12px, 3vw, 44px);
+  min-height: 420px;
   overflow: visible;
   touch-action: pan-y;
 }
@@ -395,8 +396,8 @@ body {
 
 .footer-blox-scene {
   position: relative;
-  width: 168px;
-  height: 128px;
+  width: clamp(168px, 18vw, 230px);
+  height: clamp(128px, 14vw, 176px);
   margin: -38px 0 -28px;
   overflow: visible;
   flex: 0 0 auto;
@@ -1515,6 +1516,28 @@ body {
   .rocket-scene__canvas {
     pointer-events: none;
   }
+
+  .rocket-scene {
+    inset: clamp(76px, 12vw, 116px) clamp(0px, 4vw, 26px) clamp(8px, 3vw, 28px);
+    min-height: min(76svh, 760px);
+  }
+
+  .footer-blox-scene__canvas {
+    pointer-events: none;
+  }
+}
+
+@media (min-width: 721px) and (max-width: 1180px) {
+  .rocket-scene {
+    inset: clamp(86px, 10vw, 128px) clamp(18px, 5vw, 58px) clamp(12px, 4vw, 42px);
+    min-height: min(78svh, 820px);
+  }
+
+  .footer-blox-scene {
+    width: 218px;
+    height: 164px;
+    margin: -34px 0 -24px;
+  }
 }
 
 @media (max-width: 720px) {
@@ -1557,6 +1580,19 @@ body {
     height: 44px;
   }
 
+  .rocket-only {
+    min-height: 100svh;
+  }
+
+  .rocket-scene {
+    inset: 112px -26px 12px;
+    min-height: calc(100svh - 122px);
+  }
+
+  .rocket-scene__poster {
+    transform: scale(0.92);
+  }
+
   .service-nav {
     width: 100%;
     justify-content: center;
@@ -1596,15 +1632,16 @@ body {
   }
 
   .footer-brand__head {
-    align-items: flex-start;
-    flex-direction: column;
-    gap: 8px;
+    align-items: center;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 14px;
   }
 
   .footer-blox-scene {
-    width: 150px;
-    height: 104px;
-    margin: -18px 0 -18px;
+    width: min(48vw, 190px);
+    height: min(38vw, 150px);
+    margin: -24px -10px -22px 0;
   }
 
   .order-toast {

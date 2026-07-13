@@ -44,6 +44,8 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
   const pointer = new THREE.Vector2(0, 0)
   const pointerTarget = new THREE.Vector2(0, 0)
   const clock = new THREE.Clock()
+  let isCompactViewport = false
+  let isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches
 
   try {
     renderer = new THREE.WebGLRenderer({
@@ -80,8 +82,12 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
       return
     }
 
+    isTouchViewport = window.matchMedia('(hover: none), (pointer: coarse)').matches
+    isCompactViewport = width < 760 || height < 760 || isTouchViewport
     renderer.setSize(width, height, false)
-    camera.position.z = width < 520 ? 10.8 : width < 900 ? 11.4 : 12.4
+    camera.position.z = isCompactViewport
+      ? width < 520 ? 14.8 : 13.7
+      : 12.4
     camera.aspect = width / height
     camera.updateProjectionMatrix()
   }
@@ -106,10 +112,12 @@ async function createRocketScene({ container, canvas, onReady, isCancelled }) {
       pointer.lerp(pointerTarget, 0.055)
 
       if (model) {
-        model.rotation.x = -0.08 + pointer.y * 0.08
-        model.rotation.y = 0.2 + elapsed * 0.32 + pointer.x * 0.18
-        model.rotation.z = -0.06 + Math.sin(elapsed * 0.55) * 0.018
-        model.position.y = Math.sin(elapsed * 0.85) * 0.09
+        const spinSpeed = isTouchViewport ? 0.52 : 0.32
+        const floatAmount = isCompactViewport ? 0.13 : 0.09
+        model.rotation.x = -0.08 + pointer.y * 0.08 + Math.sin(elapsed * 0.45) * 0.025
+        model.rotation.y = 0.2 + elapsed * spinSpeed + pointer.x * 0.18
+        model.rotation.z = -0.06 + Math.sin(elapsed * 0.55) * 0.026
+        model.position.y = Math.sin(elapsed * 0.85) * floatAmount
       }
 
       camera.position.x = pointer.x * 0.12
