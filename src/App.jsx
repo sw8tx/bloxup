@@ -399,7 +399,7 @@ function CryptoPaymentLogo({ currency }) {
   )
 }
 
-function HeaderActions({ cartCount, onCartOpen }) {
+function HeaderActions({ cartCount, onCartOpen, onOrdersOpen }) {
   const [user, setUser] = useState(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -438,9 +438,14 @@ function HeaderActions({ cartCount, onCartOpen }) {
         {user ? (user.globalName || user.username) : 'Sign in with Discord'}
       </a>
       {user && (
-        <button className="header-actions__logout" type="button" onClick={logout} disabled={isLoggingOut}>
-          {isLoggingOut ? 'Leaving...' : 'Log out'}
-        </button>
+        <>
+          <button className="header-actions__orders" type="button" onClick={onOrdersOpen}>
+            Orders
+          </button>
+          <button className="header-actions__logout" type="button" onClick={logout} disabled={isLoggingOut}>
+            {isLoggingOut ? 'Leaving...' : 'Log out'}
+          </button>
+        </>
       )}
       <button className="header-actions__cart" type="button" onClick={onCartOpen}>
         Cart
@@ -450,7 +455,7 @@ function HeaderActions({ cartCount, onCartOpen }) {
   )
 }
 
-function Header({ cartCount, onCartOpen }) {
+function Header({ cartCount, onCartOpen, onOrdersOpen }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
 
@@ -552,7 +557,7 @@ function Header({ cartCount, onCartOpen }) {
         ))}
       </nav>
 
-      <HeaderActions cartCount={cartCount} onCartOpen={onCartOpen} />
+      <HeaderActions cartCount={cartCount} onCartOpen={onCartOpen} onOrdersOpen={onOrdersOpen} />
     </header>
   )
 }
@@ -1149,6 +1154,107 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
   )
 }
 
+function OrdersOverlay({ isOpen, onClose }) {
+  const [orders, setOrders] = useState([])
+  const [isLoading, setIsLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined
+    }
+
+    const controller = new AbortController()
+    setIsLoading(true)
+    setError('')
+
+    fetch('/api/orders', { signal: controller.signal })
+      .then(async (response) => {
+        const data = await response.json()
+
+        if (!response.ok || !data.ok) {
+          throw new Error(data.message || 'Could not load orders.')
+        }
+
+        setOrders(data.orders || [])
+      })
+      .catch((fetchError) => {
+        if (fetchError.name !== 'AbortError') {
+          setError(fetchError.message || 'Could not load orders.')
+        }
+      })
+      .finally(() => {
+        if (!controller.signal.aborted) {
+          setIsLoading(false)
+        }
+      })
+
+    return () => controller.abort()
+  }, [isOpen])
+
+  if (!isOpen) {
+    return null
+  }
+
+  return (
+    <div className="cart-backdrop" role="dialog" aria-modal="true" aria-label="Your orders">
+      <section className="cart-panel orders-panel">
+        <button className="cart-panel__close" type="button" aria-label="Close orders" onClick={onClose}>×</button>
+        <div className="cart-panel__head">
+          <span className="cart-panel__eyebrow">account history</span>
+          <h2>Your Orders</h2>
+          <p>Every order you place while signed in with Discord shows up here.</p>
+        </div>
+
+        {isLoading && <p className="orders-empty">Loading your orders...</p>}
+        {error && <p className="cart-error">{error}</p>}
+
+        {!isLoading && !error && orders.length === 0 && (
+          <p className="orders-empty">No orders yet. Add a service to your cart and checkout once.</p>
+        )}
+
+        {!isLoading && !error && orders.length > 0 && (
+          <div className="orders-list">
+            {orders.map((order) => (
+              <article className="order-card" key={order.id}>
+                <div className="order-card__top">
+                  <div>
+                    <strong>{order.id}</strong>
+                    <small>{new Date(order.createdAt).toLocaleString('en-US')}</small>
+                  </div>
+                  <span className={`order-status order-status--${order.status}`}>{order.status.replaceAll('_', ' ')}</span>
+                </div>
+
+                <div className="order-card__items">
+                  {(order.items || []).map((item) => (
+                    <div className="order-card__item" key={`${order.id}-${item.platform}-${item.service}-${item.amount}`}>
+                      <span><PlatformIcon platform={item.platform} /></span>
+                      <p>{formatAmount(item.amount)} {item.platform} {item.service}</p>
+                      <strong>{formatPrice(item.price)}</strong>
+                    </div>
+                  ))}
+                </div>
+
+                <div className="order-card__meta">
+                  <span>Total <strong>{formatPrice(order.total || 0)}</strong></span>
+                  <span>Payment <strong>{order.payment?.name || 'Crypto'}</strong></span>
+                  <span>Status <strong>{order.paymentStatus?.status || order.status}</strong></span>
+                </div>
+
+                {order.customer?.target && (
+                  <a className="order-card__target" href={order.customer.target} target="_blank" rel="noreferrer">
+                    Open boosted profile/video
+                  </a>
+                )}
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+    </div>
+  )
+}
+
 function AuthPage() {
   const [status, setStatus] = useState('')
   const [error, setError] = useState('')
@@ -1321,6 +1427,7 @@ function App() {
     }
   })
   const [isCartOpen, setIsCartOpen] = useState(route === '/cart')
+  const [isOrdersOpen, setIsOrdersOpen] = useState(route === '/orders')
 
   useEffect(() => {
     window.localStorage.setItem('bloxup-cart', JSON.stringify(cartItems))
@@ -1364,7 +1471,11 @@ function App() {
   return (
     <div className="site-shell">
       {isRouteLoading && <PolicyLoader label="Loading service page" />}
-      <Header cartCount={cartItems.length} onCartOpen={() => setIsCartOpen(true)} />
+      <Header
+        cartCount={cartItems.length}
+        onCartOpen={() => setIsCartOpen(true)}
+        onOrdersOpen={() => setIsOrdersOpen(true)}
+      />
       {isAuthPage ? (
         <AuthPage />
       ) : productPage ? (
@@ -1385,6 +1496,7 @@ function App() {
         onRemoveItem={removeCartItem}
         onClearCart={clearCart}
       />
+      <OrdersOverlay isOpen={isOrdersOpen} onClose={() => setIsOrdersOpen(false)} />
     </div>
   )
 }

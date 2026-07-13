@@ -334,25 +334,33 @@ async function discordCallback(request, env) {
 }
 
 async function getCurrentUser(request, env) {
-  const token = getCookie(request, SESSION_COOKIE)
+  const session = await getSessionUser(request, env)
 
-  if (!token || !env.AUTH_KV) {
+  if (!session) {
     return json({ ok: true, authenticated: false })
   }
-
-  const sessionRaw = await env.AUTH_KV.get(`session:${token}`)
-
-  if (!sessionRaw) {
-    return json({ ok: true, authenticated: false })
-  }
-
-  const session = JSON.parse(sessionRaw)
 
   return json({
     ok: true,
     authenticated: true,
     user: publicUser(session),
   })
+}
+
+async function getSessionUser(request, env) {
+  const token = getCookie(request, SESSION_COOKIE)
+
+  if (!token || !env.AUTH_KV) {
+    return null
+  }
+
+  const sessionRaw = await env.AUTH_KV.get(`session:${token}`)
+
+  if (!sessionRaw) {
+    return null
+  }
+
+  return JSON.parse(sessionRaw)
 }
 
 async function logout(request, env) {
@@ -395,6 +403,10 @@ function orderKey(orderId) {
   return `order:${orderId}`
 }
 
+function userOrdersKey(userId) {
+  return `user_orders:${userId}`
+}
+
 function txUseKey(paymentId, txId) {
   return `tx:${paymentId}:${String(txId || '').toLowerCase()}`
 }
@@ -404,6 +416,13 @@ function publicOrder(order) {
     id: order.id,
     status: order.status,
     createdAt: order.createdAt,
+    items: order.items || [],
+    customer: order.customer || null,
+    subtotal: order.subtotal || 0,
+    discount: order.discount || 0,
+    fee: order.fee || 0,
+    total: order.total || 0,
+    txId: order.txId || null,
     paymentStatus: order.paymentStatus,
     payment: order.payment,
   }
@@ -424,6 +443,21 @@ async function getOrder(env, orderId) {
 
 async function saveOrder(env, order) {
   await env.AUTH_KV.put(orderKey(order.id), JSON.stringify(order), {
+    expirationTtl: ORDER_TTL_SECONDS,
+  })
+}
+
+async function addOrderToUserIndex(env, userId, orderId) {
+  if (!userId || !env.AUTH_KV) {
+    return
+  }
+
+  const key = userOrdersKey(userId)
+  const raw = await env.AUTH_KV.get(key)
+  const current = raw ? JSON.parse(raw) : []
+  const next = [orderId, ...current.filter((id) => id !== orderId)].slice(0, 100)
+
+  await env.AUTH_KV.put(key, JSON.stringify(next), {
     expirationTtl: ORDER_TTL_SECONDS,
   })
 }
@@ -658,6 +692,8 @@ async function checkPayment(order) {
 
 async function createOrder(request, env, ctx) {
   const body = await readJson(request)
+  const sessionUser = await getSessionUser(request, env)
+  const account = publicUser(sessionUser)
 
   if (!body || !Array.isArray(body.items) || body.items.length === 0) {
     return json({ ok: false, message: 'Cart is empty.' }, { status: 400 })
@@ -690,6 +726,8 @@ async function createOrder(request, env, ctx) {
     id: `BX-${Date.now().toString(36).toUpperCase()}-${generateToken().slice(0, 6).toUpperCase()}`,
     status: 'pending',
     createdAt: new Date().toISOString(),
+    discordUserId: account?.id || null,
+    account,
     items,
     customer: {
       email: short(body.customer?.email, 240),
@@ -723,9 +761,28 @@ async function createOrder(request, env, ctx) {
   }
 
   await saveOrder(env, order)
+  await addOrderToUserIndex(env, order.discordUserId, order.id)
   ctx.waitUntil(sendOrderWebhook(env, '🛒 New bloxup order', order).catch(() => undefined))
 
   return json({ ok: true, order: publicOrder(order) })
+}
+
+async function listCurrentUserOrders(request, env) {
+  const sessionUser = await getSessionUser(request, env)
+  const account = publicUser(sessionUser)
+
+  if (!account?.id) {
+    return json({ ok: false, message: 'Sign in with Discord to view your orders.' }, { status: 401 })
+  }
+
+  const raw = await env.AUTH_KV?.get(userOrdersKey(account.id))
+  const orderIds = raw ? JSON.parse(raw) : []
+  const orders = await Promise.all(orderIds.map((orderId) => getOrder(env, orderId)))
+
+  return json({
+    ok: true,
+    orders: orders.filter(Boolean).map(publicOrder),
+  })
 }
 
 async function updatePayment(request, env, ctx, orderId) {
@@ -826,6 +883,10 @@ export default {
 
     if (url.pathname === '/api/auth/logout' && request.method === 'POST') {
       return logout(request, env)
+    }
+
+    if (url.pathname === '/api/orders' && request.method === 'GET') {
+      return listCurrentUserOrders(request, env)
     }
 
     if (url.pathname === '/api/orders' && request.method === 'POST') {
