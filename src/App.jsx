@@ -367,8 +367,22 @@ function PlatformIcon({ platform }) {
   )
 }
 
+function DiscordLogo({ className = 'discord-logo' }) {
+  return (
+    <span className={className} aria-hidden="true">
+      <svg viewBox="0 0 127.14 96.36" focusable="false">
+        <path
+          fill="currentColor"
+          d="M107.7 8.07A105.15 105.15 0 0 0 81.47 0a72.06 72.06 0 0 0-3.36 6.83 97.68 97.68 0 0 0-29.11 0A72.37 72.37 0 0 0 45.64 0 105.89 105.89 0 0 0 19.39 8.09C2.79 32.65-1.71 56.6.54 80.21a105.73 105.73 0 0 0 32.17 16.15 77.7 77.7 0 0 0 6.89-11.1 68.42 68.42 0 0 1-10.85-5.18c.91-.66 1.8-1.34 2.66-2.03a75.57 75.57 0 0 0 64.32 0c.87.71 1.76 1.39 2.66 2.03a68.68 68.68 0 0 1-10.87 5.19 77 77 0 0 0 6.89 11.09 105.25 105.25 0 0 0 32.19-16.14c2.64-27.39-4.51-51.13-18.9-72.15ZM42.45 65.69c-6.26 0-11.42-5.73-11.42-12.79s5.05-12.8 11.42-12.8c6.43 0 11.52 5.79 11.42 12.8 0 7.06-5.05 12.79-11.42 12.79Zm42.24 0c-6.26 0-11.42-5.73-11.42-12.79s5.05-12.8 11.42-12.8c6.43 0 11.52 5.79 11.42 12.8 0 7.06-5.05 12.79-11.42 12.79Z"
+        />
+      </svg>
+    </span>
+  )
+}
+
 function HeaderActions() {
   const [user, setUser] = useState(null)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     let isMounted = true
@@ -387,12 +401,28 @@ function HeaderActions() {
     }
   }, [])
 
+  const logout = async () => {
+    setIsLoggingOut(true)
+
+    try {
+      await fetch('/api/auth/logout', { method: 'POST' })
+      setUser(null)
+    } finally {
+      setIsLoggingOut(false)
+    }
+  }
+
   return (
     <div className="header-actions" aria-label="Account actions">
       <a className="header-actions__discord" href="/sign-in">
-        {user?.avatar ? <img src={user.avatar} alt="" /> : <span aria-hidden="true">D</span>}
+        {user?.avatar ? <img src={user.avatar} alt="" /> : <DiscordLogo />}
         {user ? (user.globalName || user.username) : 'Sign in with Discord'}
       </a>
+      {user && (
+        <button className="header-actions__logout" type="button" onClick={logout} disabled={isLoggingOut}>
+          {isLoggingOut ? 'Leaving...' : 'Log out'}
+        </button>
+      )}
       <a className="header-actions__cart" href="/cart">Cart</a>
     </div>
   )
@@ -810,7 +840,7 @@ function AuthPage() {
 
         {!user && (
           <a className="discord-login-button" href="/api/auth/discord/start">
-            <span className="discord-login-button__mark">D</span>
+            <DiscordLogo className="discord-login-button__mark discord-logo" />
             Sign in with Discord
           </a>
         )}

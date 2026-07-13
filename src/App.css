@@ -50,7 +50,8 @@ body {
   font-family: Inter, ui-sans-serif, system-ui, sans-serif;
 }
 
-.header-actions a {
+.header-actions a,
+.header-actions button {
   display: inline-grid;
   grid-auto-flow: column;
   grid-auto-columns: max-content;
@@ -64,15 +65,22 @@ body {
   color: #071006;
   background: rgba(255, 255, 255, 0.82);
   box-shadow: 0 8px 20px rgba(7, 16, 6, 0.055);
+  font-family: inherit;
   font-size: 0.75rem;
   font-weight: 900;
   letter-spacing: -0.025em;
   text-decoration: none;
+  cursor: pointer;
   transition:
     transform 150ms ease,
     border-color 150ms ease,
     background 150ms ease,
     box-shadow 150ms ease;
+}
+
+.header-actions button:disabled {
+  cursor: wait;
+  opacity: 0.7;
 }
 
 .header-actions__discord {
@@ -82,7 +90,6 @@ body {
   white-space: nowrap;
 }
 
-.header-actions__discord span,
 .header-actions__discord img {
   width: 20px;
   height: 20px;
@@ -96,8 +103,33 @@ body {
   object-fit: cover;
 }
 
+.discord-logo {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 50%;
+  color: #ffffff;
+  background: #5865f2;
+  overflow: hidden;
+}
+
+.discord-logo svg {
+  width: 16px;
+  height: 13px;
+  display: block;
+}
+
+.header-actions__logout {
+  color: #071006;
+  background: #ffffff;
+}
+
 .header-actions a:hover,
-.header-actions a:focus-visible {
+.header-actions a:focus-visible,
+.header-actions button:hover,
+.header-actions button:focus-visible {
   border-color: #25ed48;
   background: #efffd8;
   box-shadow: 0 10px 24px rgba(37, 237, 72, 0.14);
@@ -1045,15 +1077,15 @@ body {
 }
 
 .discord-login-button__mark {
-  width: 24px;
-  height: 24px;
-  display: grid;
-  place-items: center;
-  border-radius: 50%;
+  width: 26px;
+  height: 26px;
   color: #5865f2;
   background: #ffffff;
-  font-size: 0.78rem;
-  font-weight: 950;
+}
+
+.discord-login-button__mark svg {
+  width: 19px;
+  height: 15px;
 }
 
 .discord-login-button:hover,
@@ -1560,14 +1592,19 @@ body {
     order: 2;
   }
 
-  .header-actions a {
+  .header-actions a,
+  .header-actions button {
     min-height: 29px;
     padding: 0 10px;
     font-size: 0.68rem;
   }
 
   .header-actions__discord {
-    max-width: calc(100vw - 112px);
+    max-width: calc(100vw - 192px);
+  }
+
+  .header-actions__logout {
+    padding-inline: 9px;
   }
 
   .header-actions__cart {
