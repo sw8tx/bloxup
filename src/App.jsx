@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import FooterBloxScene from './components/FooterBloxScene.jsx'
 import RocketScene from './components/RocketScene.jsx'
+import { cryptoCurrencies, fallbackCryptoRatesEur, formatCryptoAmount, getCryptoById } from './crypto.jsx'
 
 const baseUrl = import.meta.env.BASE_URL
 const rocketIcon = `${baseUrl}rocket-icon.png?v=clean-1`
@@ -380,7 +381,7 @@ function DiscordLogo({ className = 'discord-logo' }) {
   )
 }
 
-function HeaderActions() {
+function HeaderActions({ cartCount, onCartOpen }) {
   const [user, setUser] = useState(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
@@ -423,12 +424,15 @@ function HeaderActions() {
           {isLoggingOut ? 'Leaving...' : 'Log out'}
         </button>
       )}
-      <a className="header-actions__cart" href="/cart">Cart</a>
+      <button className="header-actions__cart" type="button" onClick={onCartOpen}>
+        Cart
+        {cartCount > 0 && <span className="cart-badge" aria-label={`${cartCount} item in cart`}>{cartCount}</span>}
+      </button>
     </div>
   )
 }
 
-function Header() {
+function Header({ cartCount, onCartOpen }) {
   const [openMenu, setOpenMenu] = useState(null)
   const navRef = useRef(null)
 
@@ -530,7 +534,7 @@ function Header() {
         ))}
       </nav>
 
-      <HeaderActions />
+      <HeaderActions cartCount={cartCount} onCartOpen={onCartOpen} />
     </header>
   )
 }
@@ -638,7 +642,7 @@ function formatPrice(value) {
   }).format(value)
 }
 
-function ProductPage({ page }) {
+function ProductPage({ page, onAddToCart }) {
   const presets = [1000, 2500, 5000, 10000, 25000, 50000]
   const maxAmount = page.serviceKey === 'views' ? 100000 : 50000
   const step = page.serviceKey === 'views' ? 500 : 250
@@ -664,6 +668,19 @@ function ProductPage({ page }) {
 
   const updateAmount = (nextAmount) => {
     setAmount(Math.min(maxAmount, Math.max(1000, Math.round(nextAmount / step) * step)))
+  }
+
+  const addCurrentItemToCart = () => {
+    onAddToCart({
+      id: `${page.platform}-${page.service}-${Date.now()}`,
+      platform: page.platform,
+      service: page.service,
+      serviceKey: page.serviceKey,
+      amount,
+      rate: page.rate,
+      price,
+      href: page.href,
+    })
   }
 
   return (
@@ -761,7 +778,7 @@ function ProductPage({ page }) {
             <p>You pay <strong>{formatPrice(price)}</strong> for {formatAmount(amount)} {unitLabel}.</p>
           </div>
 
-          <button className="add-cart-button" type="button">+ Add to cart</button>
+          <button className="add-cart-button" type="button" onClick={addCurrentItemToCart}>+ Add to cart</button>
 
           <div className="trust-row">
             <span>250 purchases in the last 24 hours</span>
@@ -771,6 +788,340 @@ function ProductPage({ page }) {
         </div>
       </section>
     </main>
+  )
+}
+
+function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
+  const [step, setStep] = useState('cart')
+  const [promoCode, setPromoCode] = useState('')
+  const [selectedPaymentId, setSelectedPaymentId] = useState('ethereum')
+  const [rates, setRates] = useState(fallbackCryptoRatesEur)
+  const [customer, setCustomer] = useState({ email: '', discord: '', target: '' })
+  const [order, setOrder] = useState(null)
+  const [txId, setTxId] = useState('')
+  const [paymentStatus, setPaymentStatus] = useState(null)
+  const [checkoutError, setCheckoutError] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+
+  const selectedPayment = getCryptoById(selectedPaymentId)
+  const subtotal = items.reduce((sum, item) => sum + item.price, 0)
+  const discount = promoCode.trim().toUpperCase() === 'TEST' ? subtotal * 0.999 : 0
+  const payable = Math.max(0, subtotal - discount)
+  const fee = payable * selectedPayment.feeRate
+  const total = payable + fee
+  const cryptoAmount = total / (rates[selectedPayment.id] || fallbackCryptoRatesEur[selectedPayment.id] || 1)
+  const canCheckout = items.length > 0 && customer.email.trim() && customer.discord.trim() && customer.target.trim()
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined
+    }
+
+    const ids = cryptoCurrencies.map((currency) => currency.coinGeckoId).join(',')
+    const controller = new AbortController()
+
+    fetch(`https://api.coingecko.com/api/v3/simple/price?ids=${ids}&vs_currencies=eur`, {
+      signal: controller.signal,
+    })
+      .then((response) => response.json())
+      .then((data) => {
+        const nextRates = { ...fallbackCryptoRatesEur }
+        cryptoCurrencies.forEach((currency) => {
+          if (data?.[currency.coinGeckoId]?.eur) {
+            nextRates[currency.id] = data[currency.coinGeckoId].eur
+          }
+        })
+        setRates(nextRates)
+      })
+      .catch(() => undefined)
+
+    return () => controller.abort()
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      setStep('cart')
+      setOrder(null)
+      setTxId('')
+      setPaymentStatus(null)
+      setCheckoutError('')
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!order?.id || paymentStatus?.status === 'paid') {
+      return undefined
+    }
+
+    const interval = window.setInterval(() => {
+      fetch(`/api/orders/${order.id}/status`)
+        .then((response) => response.json())
+        .then((data) => {
+          if (data.ok) {
+            setPaymentStatus(data.payment)
+          }
+        })
+        .catch(() => undefined)
+    }, 15000)
+
+    return () => window.clearInterval(interval)
+  }, [order?.id, paymentStatus?.status])
+
+  if (!isOpen) {
+    return null
+  }
+
+  const updateCustomer = (field, value) => {
+    setCustomer((current) => ({ ...current, [field]: value }))
+  }
+
+  const createOrder = async () => {
+    if (!canCheckout) {
+      setCheckoutError('Enter email, Discord username, and the profile/video link first.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setCheckoutError('')
+
+    try {
+      const response = await fetch('/api/orders', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          items,
+          customer,
+          promoCode: promoCode.trim().toUpperCase(),
+          subtotal,
+          discount,
+          fee,
+          total,
+          payment: {
+            id: selectedPayment.id,
+            name: selectedPayment.name,
+            symbol: selectedPayment.symbol,
+            network: selectedPayment.network,
+            address: selectedPayment.address,
+            confirmations: selectedPayment.confirmations,
+            amountCrypto: cryptoAmount,
+            amountLabel: formatCryptoAmount(cryptoAmount, selectedPayment.symbol),
+          },
+        }),
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message || 'Could not create order.')
+      }
+
+      setOrder(data.order)
+      setPaymentStatus(data.order.paymentStatus)
+      setStep('invoice')
+    } catch (error) {
+      setCheckoutError(error.message || 'Could not create order.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const submitTransaction = async () => {
+    if (!order?.id || !txId.trim()) {
+      setCheckoutError('Paste your transaction ID first.')
+      return
+    }
+
+    setIsSubmitting(true)
+    setCheckoutError('')
+
+    try {
+      const response = await fetch(`/api/orders/${order.id}/payment`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ txId: txId.trim() }),
+      })
+      const data = await response.json()
+
+      if (!response.ok || !data.ok) {
+        throw new Error(data.message || 'Could not check payment yet.')
+      }
+
+      setPaymentStatus(data.payment)
+      if (data.payment?.status === 'paid') {
+        onClearCart()
+      }
+    } catch (error) {
+      setCheckoutError(error.message || 'Could not check payment yet.')
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const copyText = (value) => {
+    void navigator.clipboard?.writeText(value)
+  }
+
+  const qrData = encodeURIComponent(`${selectedPayment.address}?amount=${cryptoAmount}`)
+  const invoiceStatus = paymentStatus?.status === 'paid'
+    ? 'Order received. Thank you for your order.'
+    : paymentStatus?.txId
+      ? `Waiting for confirmations: ${paymentStatus.confirmations || 0}/${selectedPayment.confirmations}`
+      : 'Waiting for your transaction ID.'
+
+  return (
+    <div className="cart-backdrop" role="dialog" aria-modal="true" aria-label="Shopping cart">
+      <section className={`cart-panel cart-panel--${step}`}>
+        <button className="cart-panel__close" type="button" aria-label="Close cart" onClick={onClose}>×</button>
+
+        {step === 'cart' && (
+          <>
+            <div className="cart-panel__head">
+              <span className="cart-panel__eyebrow">bloxup checkout</span>
+              <h2>Shopping Cart</h2>
+              <p>Add your contact details and the profile or video that should be boosted.</p>
+            </div>
+
+            <div className="cart-items">
+              {items.length === 0 ? (
+                <p className="cart-empty">Your cart is empty.</p>
+              ) : items.map((item) => (
+                <article className="cart-item" key={item.id}>
+                  <span className="cart-item__icon"><PlatformIcon platform={item.platform} /></span>
+                  <div>
+                    <strong>{formatAmount(item.amount)} {item.platform} {item.service}</strong>
+                    <small>{formatPrice(item.price)} · {formatPrice(item.rate)} / 1k</small>
+                  </div>
+                  <button type="button" aria-label="Remove item" onClick={() => onRemoveItem(item.id)}>×</button>
+                </article>
+              ))}
+            </div>
+
+            <div className="cart-form">
+              <label>
+                Email address
+                <input value={customer.email} onChange={(event) => updateCustomer('email', event.target.value)} type="email" placeholder="you@example.com" />
+              </label>
+              <label>
+                Discord username
+                <input value={customer.discord} onChange={(event) => updateCustomer('discord', event.target.value)} placeholder="@username or user id" />
+              </label>
+              <label>
+                Profile / video link
+                <input value={customer.target} onChange={(event) => updateCustomer('target', event.target.value)} placeholder="https://..." />
+              </label>
+              <label>
+                Code
+                <input value={promoCode} onChange={(event) => setPromoCode(event.target.value)} placeholder="TEST" />
+              </label>
+            </div>
+
+            <div className="cart-total">
+              <span>Subtotal <strong>{formatPrice(subtotal)}</strong></span>
+              <span>Discount <strong>-{formatPrice(discount)}</strong></span>
+              <span>Crypto fee <strong>{formatPrice(fee)}</strong></span>
+              <span className="cart-total__grand">Total <strong>{formatPrice(total)}</strong></span>
+            </div>
+
+            {checkoutError && <p className="cart-error">{checkoutError}</p>}
+
+            <button className="cart-checkout" type="button" disabled={!canCheckout || isSubmitting} onClick={() => setStep('payment')}>
+              Checkout
+            </button>
+          </>
+        )}
+
+        {step === 'payment' && (
+          <>
+            <div className="cart-panel__head">
+              <button className="cart-back" type="button" onClick={() => setStep('cart')}>Back to cart</button>
+              <h2>Choose payment method</h2>
+              <p>Select crypto, then continue to the invoice.</p>
+            </div>
+
+            <div className="payment-grid">
+              {cryptoCurrencies.map((currency) => (
+                <button
+                  className={`payment-card${currency.id === selectedPaymentId ? ' is-selected' : ''}`}
+                  type="button"
+                  key={currency.id}
+                  onClick={() => setSelectedPaymentId(currency.id)}
+                >
+                  <span className="payment-card__fee">{Math.round(currency.feeRate * 100)}%</span>
+                  <span className="payment-card__coin" style={{ '--coin': currency.accent }}>{currency.mark}</span>
+                  <strong>{currency.name}</strong>
+                  <small>{currency.network}</small>
+                </button>
+              ))}
+            </div>
+
+            <div className="cart-total">
+              <span>Total in EUR <strong>{formatPrice(total)}</strong></span>
+              <span>Estimated crypto <strong>{formatCryptoAmount(cryptoAmount, selectedPayment.symbol)}</strong></span>
+              <span>Network <strong>{selectedPayment.network}</strong></span>
+            </div>
+
+            {checkoutError && <p className="cart-error">{checkoutError}</p>}
+
+            <button className="cart-checkout" type="button" disabled={isSubmitting} onClick={createOrder}>
+              {isSubmitting ? 'Creating invoice...' : 'Continue'}
+            </button>
+          </>
+        )}
+
+        {step === 'invoice' && (
+          <>
+            <div className="cart-panel__head">
+              <button className="cart-back" type="button" onClick={() => setStep('payment')}>Back to payment</button>
+              <h2>Pay via {selectedPayment.name}</h2>
+              <p>{invoiceStatus}</p>
+            </div>
+
+            <div className="invoice-layout">
+              <div className="invoice-details">
+                <label>
+                  You pay, fee included
+                  <div className="copy-field">
+                    <strong>{formatCryptoAmount(cryptoAmount, selectedPayment.symbol)}</strong>
+                    <button type="button" onClick={() => copyText(String(cryptoAmount))}>Copy</button>
+                  </div>
+                </label>
+
+                <label>
+                  Address to send funds to
+                  <div className="copy-field">
+                    <strong>{selectedPayment.address}</strong>
+                    <button type="button" onClick={() => copyText(selectedPayment.address)}>Copy</button>
+                  </div>
+                </label>
+
+                <label>
+                  Transaction ID
+                  <input value={txId} onChange={(event) => setTxId(event.target.value)} placeholder="Paste tx hash / signature after sending" />
+                </label>
+
+                <div className="invoice-meta">
+                  <span>Order ID <strong>{order?.id}</strong></span>
+                  <span>Confirmations required <strong>{selectedPayment.confirmations}</strong></span>
+                  <span>Status <strong>{paymentStatus?.status || 'pending'}</strong></span>
+                </div>
+
+                {checkoutError && <p className="cart-error">{checkoutError}</p>}
+                {paymentStatus?.message && <p className="cart-note">{paymentStatus.message}</p>}
+
+                <button className="cart-checkout" type="button" disabled={isSubmitting || paymentStatus?.status === 'paid'} onClick={submitTransaction}>
+                  {paymentStatus?.status === 'paid' ? 'Order received' : isSubmitting ? 'Checking...' : 'I sent it - check payment'}
+                </button>
+              </div>
+
+              <aside className="invoice-qr">
+                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${qrData}`} alt="" />
+                <strong>{selectedPayment.symbol}</strong>
+                <span>{selectedPayment.network}</span>
+              </aside>
+            </div>
+          </>
+        )}
+      </section>
+    </div>
   )
 }
 
@@ -938,6 +1289,18 @@ function App() {
   const productPage = servicePages[route]
   const isAuthPage = route === '/sign-in' || route === '/sign-up'
   const [isRouteLoading, setIsRouteLoading] = useState(false)
+  const [cartItems, setCartItems] = useState(() => {
+    try {
+      return JSON.parse(window.localStorage.getItem('bloxup-cart') || '[]')
+    } catch {
+      return []
+    }
+  })
+  const [isCartOpen, setIsCartOpen] = useState(route === '/cart')
+
+  useEffect(() => {
+    window.localStorage.setItem('bloxup-cart', JSON.stringify(cartItems))
+  }, [cartItems])
 
   useEffect(() => {
     let loaderTimer
@@ -962,14 +1325,26 @@ function App() {
     }
   }, [])
 
+  const addToCart = (item) => {
+    setCartItems([item])
+  }
+
+  const removeCartItem = (itemId) => {
+    setCartItems((currentItems) => currentItems.filter((item) => item.id !== itemId))
+  }
+
+  const clearCart = () => {
+    setCartItems([])
+  }
+
   return (
     <div className="site-shell">
       {isRouteLoading && <PolicyLoader label="Loading service page" />}
-      <Header />
+      <Header cartCount={cartItems.length} onCartOpen={() => setIsCartOpen(true)} />
       {isAuthPage ? (
         <AuthPage />
       ) : productPage ? (
-        <ProductPage page={productPage} />
+        <ProductPage page={productPage} onAddToCart={addToCart} />
       ) : policyPage ? (
         <PolicyPage page={policyPage} />
       ) : (
@@ -979,6 +1354,13 @@ function App() {
       )}
       <Footer />
       <OrderNotifications />
+      <CartOverlay
+        items={cartItems}
+        isOpen={isCartOpen}
+        onClose={() => setIsCartOpen(false)}
+        onRemoveItem={removeCartItem}
+        onClearCart={clearCart}
+      />
     </div>
   )
 }
