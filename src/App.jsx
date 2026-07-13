@@ -381,6 +381,24 @@ function DiscordLogo({ className = 'discord-logo' }) {
   )
 }
 
+function CryptoPaymentLogo({ currency }) {
+  return (
+    <span className={`crypto-logo crypto-logo--${currency.id}`} aria-hidden="true">
+      <span className="crypto-logo__coin">
+        {currency.id === 'polygon' && <span className="crypto-logo__chain">∞</span>}
+        {currency.id === 'ethereum' && <span className="crypto-logo__diamond" />}
+        {currency.id === 'tether' && <span className="crypto-logo__letter">T</span>}
+        {currency.id === 'litecoin' && <span className="crypto-logo__letter">Ł</span>}
+        {currency.id === 'bnb' && <span className="crypto-logo__bnb"><i /><i /><i /><i /></span>}
+        {currency.id === 'usdc' && <span className="crypto-logo__letter">$</span>}
+        {currency.id === 'solana' && <span className="crypto-logo__sol"><i /><i /><i /></span>}
+        {currency.id === 'tron' && <span className="crypto-logo__tron" />}
+        {currency.id === 'bitcoin' && <span className="crypto-logo__letter">₿</span>}
+      </span>
+    </span>
+  )
+}
+
 function HeaderActions({ cartCount, onCartOpen }) {
   const [user, setUser] = useState(null)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
@@ -805,8 +823,11 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
   const selectedPayment = getCryptoById(selectedPaymentId)
   const subtotal = items.reduce((sum, item) => sum + item.price, 0)
-  const discount = promoCode.trim().toUpperCase() === 'TEST' ? subtotal * 0.999 : 0
-  const payable = Math.max(0, subtotal - discount)
+  const rawDiscount = promoCode.trim().toUpperCase() === 'TEST' ? subtotal * 0.999 : 0
+  const payable = promoCode.trim().toUpperCase() === 'TEST' && subtotal > 0
+    ? Math.max(0.01, subtotal - rawDiscount)
+    : Math.max(0, subtotal - rawDiscount)
+  const discount = subtotal - payable
   const fee = payable * selectedPayment.feeRate
   const total = payable + fee
   const cryptoAmount = total / (rates[selectedPayment.id] || fallbackCryptoRatesEur[selectedPayment.id] || 1)
@@ -1049,7 +1070,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
                   onClick={() => setSelectedPaymentId(currency.id)}
                 >
                   <span className="payment-card__fee">{Math.round(currency.feeRate * 100)}%</span>
-                  <span className="payment-card__coin" style={{ '--coin': currency.accent }}>{currency.mark}</span>
+                  <CryptoPaymentLogo currency={currency} />
                   <strong>{currency.name}</strong>
                   <small>{currency.network}</small>
                 </button>

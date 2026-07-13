@@ -7,6 +7,7 @@ const DISCORD_AUTHORIZE_URL = 'https://discord.com/oauth2/authorize'
 const DEFAULT_DISCORD_INVITE_URL = 'https://discord.gg/mtPQYgaYu'
 const ORDER_TTL_SECONDS = 60 * 60 * 24 * 90
 const REQUIRED_CONFIRMATIONS = 6
+const PAYMENT_GRACE_MS = 5 * 60 * 1000
 const SERVICE_RATES_EUR = {
   'tiktok-followers': 3,
   'tiktok-views': 1,
@@ -43,6 +44,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'polygon',
     coinGeckoId: 'matic-network',
+    decimals: 18,
   },
   ethereum: {
     name: 'Ethereum',
@@ -52,6 +54,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'ethereum',
     coinGeckoId: 'ethereum',
+    decimals: 18,
   },
   tether: {
     name: 'Tether USD',
@@ -61,6 +64,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'ethereum',
     coinGeckoId: 'tether',
+    decimals: 6,
   },
   litecoin: {
     name: 'Litecoin',
@@ -70,6 +74,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'litecoin',
     coinGeckoId: 'litecoin',
+    decimals: 8,
   },
   bnb: {
     name: 'BNB',
@@ -79,6 +84,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'binance-smart-chain',
     coinGeckoId: 'binancecoin',
+    decimals: 18,
   },
   usdc: {
     name: 'USDC',
@@ -88,6 +94,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'ethereum',
     coinGeckoId: 'usd-coin',
+    decimals: 6,
   },
   solana: {
     name: 'Solana',
@@ -97,6 +104,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'solana',
     coinGeckoId: 'solana',
+    decimals: 9,
   },
   tron: {
     name: 'Tron',
@@ -106,6 +114,7 @@ const PAYMENT_METHODS = {
     checker: 'blockchair',
     blockchair: 'tron',
     coinGeckoId: 'tron',
+    decimals: 6,
   },
   bitcoin: {
     name: 'Bitcoin',
@@ -114,6 +123,7 @@ const PAYMENT_METHODS = {
     address: 'bc1qndg727ht62smu9v5ftp57t72ssemhqz5pfh84q',
     checker: 'blockstream',
     coinGeckoId: 'bitcoin',
+    decimals: 8,
   },
 }
 
@@ -385,6 +395,10 @@ function orderKey(orderId) {
   return `order:${orderId}`
 }
 
+function txUseKey(paymentId, txId) {
+  return `tx:${paymentId}:${String(txId || '').toLowerCase()}`
+}
+
 function publicOrder(order) {
   return {
     id: order.id,
@@ -412,6 +426,17 @@ async function saveOrder(env, order) {
   await env.AUTH_KV.put(orderKey(order.id), JSON.stringify(order), {
     expirationTtl: ORDER_TTL_SECONDS,
   })
+}
+
+async function reservePaidTransaction(env, order) {
+  await env.AUTH_KV.put(txUseKey(order.payment.id, order.txId), order.id, {
+    expirationTtl: ORDER_TTL_SECONDS,
+  })
+}
+
+async function isTransactionUsedByAnotherOrder(env, order) {
+  const usedBy = await env.AUTH_KV?.get(txUseKey(order.payment.id, order.txId))
+  return Boolean(usedBy && usedBy !== order.id)
 }
 
 async function getCryptoRateEur(methodId, method) {
@@ -505,17 +530,26 @@ async function checkBitcoinPayment(order, method) {
   const confirmations = tx.status?.confirmed && tx.status.block_height
     ? Math.max(0, tipHeight - tx.status.block_height + 1)
     : 0
+  const txTimeMs = tx.status?.block_time ? Number(tx.status.block_time) * 1000 : 0
+  const invoiceTimeMs = Date.parse(order.createdAt)
+  const isNewForInvoice = txTimeMs && invoiceTimeMs
+    ? txTimeMs >= invoiceTimeMs - PAYMENT_GRACE_MS
+    : confirmations === 0
   const received = (tx.vout || [])
     .filter((output) => output.scriptpubkey_address === method.address)
     .reduce((sum, output) => sum + Number(output.value || 0), 0) / 100000000
   const expected = Number(order.payment.amountCrypto || 0)
   const hasEnough = received >= expected * 0.985
+  const isPaid = confirmations >= REQUIRED_CONFIRMATIONS && hasEnough && isNewForInvoice
 
   return {
     confirmations,
     received,
-    status: confirmations >= REQUIRED_CONFIRMATIONS && hasEnough ? 'paid' : 'confirming',
-    message: hasEnough
+    txTime: txTimeMs ? new Date(txTimeMs).toISOString() : null,
+    status: isPaid ? 'paid' : (isNewForInvoice ? 'confirming' : 'rejected'),
+    message: !isNewForInvoice
+      ? 'This transaction is older than the invoice. Send a new payment for this order.'
+      : hasEnough
       ? `Bitcoin payment detected. Confirmations: ${confirmations}/${REQUIRED_CONFIRMATIONS}.`
       : 'Bitcoin transaction found, but amount/address does not match the invoice yet.',
   }
@@ -537,13 +571,29 @@ function parseBlockchairConfirmations(data, txId) {
   return REQUIRED_CONFIRMATIONS
 }
 
-function parseBlockchairAmount(data, txId, address) {
+function parseBlockchairTimeMs(data, txId) {
+  const transaction = data?.data?.[txId]?.transaction
+  const time = transaction?.time || transaction?.date || transaction?.block_time
+
+  if (!time) {
+    return 0
+  }
+
+  if (typeof time === 'number') {
+    return time > 1000000000000 ? time : time * 1000
+  }
+
+  const parsed = Date.parse(time)
+  return Number.isFinite(parsed) ? parsed : 0
+}
+
+function parseBlockchairAmount(data, txId, address, decimals = 8) {
   const outputs = data?.data?.[txId]?.outputs || []
   const receivedRaw = outputs
     .filter((output) => String(output.recipient || '').toLowerCase() === address.toLowerCase())
     .reduce((sum, output) => sum + Number(output.value || 0), 0)
 
-  return receivedRaw > 0 ? receivedRaw / 100000000 : null
+  return receivedRaw > 0 ? receivedRaw / (10 ** decimals) : null
 }
 
 async function checkBlockchairPayment(order, method) {
@@ -557,17 +607,26 @@ async function checkBlockchairPayment(order, method) {
   const raw = JSON.stringify(data).toLowerCase()
   const addressFound = raw.includes(method.address.toLowerCase())
   const confirmations = parseBlockchairConfirmations(data, order.txId)
-  const received = parseBlockchairAmount(data, order.txId, method.address)
+  const txTimeMs = parseBlockchairTimeMs(data, order.txId)
+  const invoiceTimeMs = Date.parse(order.createdAt)
+  const isNewForInvoice = txTimeMs && invoiceTimeMs
+    ? txTimeMs >= invoiceTimeMs - PAYMENT_GRACE_MS
+    : false
+  const received = parseBlockchairAmount(data, order.txId, method.address, method.decimals)
   const expected = Number(order.payment.amountCrypto || 0)
-  const amountLooksOk = received === null || received >= expected * 0.985
+  const amountLooksOk = received !== null && received >= expected * 0.985
+  const isPaid = addressFound && amountLooksOk && isNewForInvoice && confirmations >= REQUIRED_CONFIRMATIONS
 
   return {
     confirmations,
     received,
-    status: addressFound && amountLooksOk && confirmations >= REQUIRED_CONFIRMATIONS ? 'paid' : 'confirming',
-    message: addressFound
+    txTime: txTimeMs ? new Date(txTimeMs).toISOString() : null,
+    status: isPaid ? 'paid' : (!isNewForInvoice && confirmations > 0 ? 'rejected' : 'confirming'),
+    message: !isNewForInvoice && confirmations > 0
+      ? 'This transaction is older than the invoice. Send a new payment for this order.'
+      : addressFound && amountLooksOk
       ? `${method.name} transaction detected. Confirmations: ${confirmations}/${REQUIRED_CONFIRMATIONS}.`
-      : `${method.name} transaction found, but destination address was not detected yet.`,
+      : `${method.name} transaction found, but destination address or amount does not match the invoice yet.`,
   }
 }
 
@@ -617,8 +676,11 @@ async function createOrder(request, env, ctx) {
 
   const subtotal = money(items.reduce((sum, item) => sum + item.price, 0))
   const promoCode = short(body.promoCode, 40).toUpperCase()
-  const discount = promoCode === 'TEST' ? money(subtotal * 0.999) : 0
-  const payable = Math.max(0, subtotal - discount)
+  const rawDiscount = promoCode === 'TEST' ? money(subtotal * 0.999) : 0
+  const payable = promoCode === 'TEST' && subtotal > 0
+    ? Math.max(0.01, money(subtotal - rawDiscount))
+    : Math.max(0, money(subtotal - rawDiscount))
+  const discount = money(subtotal - payable)
   const fee = money(payable * 0.03)
   const total = money(payable + fee)
   const cryptoRate = await getCryptoRateEur(body.payment.id, method)
@@ -680,14 +742,26 @@ async function updatePayment(request, env, ctx, orderId) {
     return json({ ok: false, message: 'Transaction ID is required.' }, { status: 400 })
   }
 
+  if (await isTransactionUsedByAnotherOrder(env, order)) {
+    order.status = 'payment_rejected'
+    order.paymentStatus = {
+      status: 'rejected',
+      confirmations: 0,
+      message: 'This transaction ID was already used for another order. Send a new payment for this invoice.',
+    }
+    await saveOrder(env, order)
+    return json({ ok: true, payment: order.paymentStatus, order: publicOrder(order) })
+  }
+
   order.paymentStatus = await checkPayment(order)
 
   if (order.paymentStatus.status === 'paid') {
     order.status = 'paid'
     order.paidAt = new Date().toISOString()
+    await reservePaidTransaction(env, order)
     ctx.waitUntil(sendOrderWebhook(env, '✅ Crypto payment confirmed', order).catch(() => undefined))
   } else {
-    order.status = 'payment_pending'
+    order.status = order.paymentStatus.status === 'rejected' ? 'payment_rejected' : 'payment_pending'
     ctx.waitUntil(sendOrderWebhook(env, '⏳ Transaction submitted', order).catch(() => undefined))
   }
 
@@ -704,14 +778,31 @@ async function getOrderStatus(env, ctx, orderId) {
   }
 
   if (order.txId && order.status !== 'paid') {
+    if (await isTransactionUsedByAnotherOrder(env, order)) {
+      order.status = 'payment_rejected'
+      order.paymentStatus = {
+        status: 'rejected',
+        confirmations: 0,
+        message: 'This transaction ID was already used for another order. Send a new payment for this invoice.',
+      }
+      await saveOrder(env, order)
+      return json({ ok: true, payment: order.paymentStatus, order: publicOrder(order) })
+    }
+
     order.paymentStatus = await checkPayment(order)
 
     if (order.paymentStatus.status === 'paid') {
       order.status = 'paid'
       order.paidAt = new Date().toISOString()
+      await reservePaidTransaction(env, order)
       await saveOrder(env, order)
       ctx.waitUntil(sendOrderWebhook(env, '✅ Crypto payment confirmed', order).catch(() => undefined))
     }
+  }
+
+  if (order.paymentStatus?.status === 'rejected' && order.status !== 'payment_rejected') {
+    order.status = 'payment_rejected'
+    await saveOrder(env, order)
   }
 
   return json({ ok: true, payment: order.paymentStatus, order: publicOrder(order) })
