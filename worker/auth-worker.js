@@ -389,6 +389,15 @@ function slug(value) {
   return String(value || '').toLowerCase().trim().replaceAll(' ', '-')
 }
 
+function normalizeDiscordIdentity(value) {
+  return String(value || '')
+    .toLowerCase()
+    .trim()
+    .replace(/^@/, '')
+    .replace(/#0$/, '')
+    .replace(/\s+/g, '')
+}
+
 function formatCryptoValue(value, symbol) {
   const decimals = value >= 1 ? 6 : 8
   return `${Number(value).toFixed(decimals).replace(/0+$/, '').replace(/\.$/, '')} ${symbol}`
@@ -428,6 +437,30 @@ function publicOrder(order) {
   }
 }
 
+function legacyOrderMatchesAccount(order, account) {
+  if (!order || !account?.id) {
+    return false
+  }
+
+  if (order.discordUserId === account.id) {
+    return true
+  }
+
+  const enteredDiscord = normalizeDiscordIdentity(order.customer?.discord)
+  if (!enteredDiscord) {
+    return false
+  }
+
+  const candidates = [
+    account.id,
+    account.username,
+    account.globalName,
+    account.discriminator && account.discriminator !== '0' ? `${account.username}#${account.discriminator}` : '',
+  ].map(normalizeDiscordIdentity).filter(Boolean)
+
+  return candidates.includes(enteredDiscord)
+}
+
 async function readJson(request) {
   try {
     return await request.json()
@@ -460,6 +493,50 @@ async function addOrderToUserIndex(env, userId, orderId) {
   await env.AUTH_KV.put(key, JSON.stringify(next), {
     expirationTtl: ORDER_TTL_SECONDS,
   })
+}
+
+async function scanLegacyOrdersForAccount(env, account) {
+  if (!env.AUTH_KV?.list || !account?.id) {
+    return []
+  }
+
+  const matches = []
+  let cursor
+  let scanned = 0
+
+  do {
+    const page = await env.AUTH_KV.list({
+      prefix: 'order:',
+      cursor,
+      limit: 100,
+    })
+
+    cursor = page.cursor
+    scanned += page.keys.length
+
+    const pageOrders = await Promise.all(page.keys.map((entry) => env.AUTH_KV.get(entry.name)))
+    for (const raw of pageOrders) {
+      if (!raw) {
+        continue
+      }
+
+      const order = JSON.parse(raw)
+      if (!legacyOrderMatchesAccount(order, account)) {
+        continue
+      }
+
+      if (order.discordUserId !== account.id) {
+        order.discordUserId = account.id
+        order.account = account
+        await saveOrder(env, order)
+        await addOrderToUserIndex(env, account.id, order.id)
+      }
+
+      matches.push(order)
+    }
+  } while (cursor && scanned < 1000)
+
+  return matches
 }
 
 async function reservePaidTransaction(env, order) {
@@ -777,11 +854,18 @@ async function listCurrentUserOrders(request, env) {
 
   const raw = await env.AUTH_KV?.get(userOrdersKey(account.id))
   const orderIds = raw ? JSON.parse(raw) : []
-  const orders = await Promise.all(orderIds.map((orderId) => getOrder(env, orderId)))
+  const indexedOrders = await Promise.all(orderIds.map((orderId) => getOrder(env, orderId)))
+  const legacyOrders = await scanLegacyOrdersForAccount(env, account)
+  const ordersById = new Map()
+
+  ;[...indexedOrders, ...legacyOrders].filter(Boolean).forEach((order) => {
+    ordersById.set(order.id, order)
+  })
+  const orders = [...ordersById.values()].sort((a, b) => Date.parse(b.createdAt) - Date.parse(a.createdAt))
 
   return json({
     ok: true,
-    orders: orders.filter(Boolean).map(publicOrder),
+    orders: orders.map(publicOrder),
   })
 }
 
