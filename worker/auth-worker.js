@@ -65,6 +65,7 @@ const PAYMENT_METHODS = {
     blockchair: 'ethereum',
     coinGeckoId: 'tether',
     decimals: 6,
+    token: true,
   },
   litecoin: {
     name: 'Litecoin',
@@ -95,6 +96,7 @@ const PAYMENT_METHODS = {
     blockchair: 'ethereum',
     coinGeckoId: 'usd-coin',
     decimals: 6,
+    token: true,
   },
   solana: {
     name: 'Solana',
@@ -668,18 +670,14 @@ async function checkBitcoinPayment(order, method) {
 
 function parseBlockchairConfirmations(data, txId) {
   const transaction = data?.data?.[txId]?.transaction
-  const blockId = Number(transaction?.block_id || transaction?.block_id === 0 ? transaction.block_id : 0)
-  const state = Number(data?.context?.state || data?.context?.market_price_usd || 0)
+  const blockId = Number(transaction?.block_id)
+  const state = Number(data?.context?.state)
 
-  if (!blockId) {
+  if (!Number.isFinite(blockId) || blockId <= 0 || !Number.isFinite(state) || state <= 0) {
     return 0
   }
 
-  if (Number.isFinite(state) && state > blockId) {
-    return Math.max(0, state - blockId + 1)
-  }
-
-  return REQUIRED_CONFIRMATIONS
+  return state >= blockId ? Math.max(0, state - blockId + 1) : 0
 }
 
 function parseBlockchairTimeMs(data, txId) {
@@ -699,12 +697,27 @@ function parseBlockchairTimeMs(data, txId) {
 }
 
 function parseBlockchairAmount(data, txId, address, decimals = 8) {
-  const outputs = data?.data?.[txId]?.outputs || []
+  const entry = data?.data?.[txId]
+  const outputs = entry?.outputs || []
   const receivedRaw = outputs
     .filter((output) => String(output.recipient || '').toLowerCase() === address.toLowerCase())
     .reduce((sum, output) => sum + Number(output.value || 0), 0)
 
-  return receivedRaw > 0 ? receivedRaw / (10 ** decimals) : null
+  if (receivedRaw > 0) {
+    return receivedRaw / (10 ** decimals)
+  }
+
+  // Blockchair exposes native EVM transfers on transaction.value rather than
+  // in outputs. Never use this fallback for ERC-20 invoices (value is zero
+  // for token transfers and must not be mistaken for a token payment).
+  const transaction = entry?.transaction
+  const recipient = String(transaction?.recipient || '').toLowerCase()
+  const nativeValue = Number(transaction?.value || 0)
+  if (recipient === address.toLowerCase() && Number.isFinite(nativeValue) && nativeValue > 0) {
+    return nativeValue / (10 ** decimals)
+  }
+
+  return null
 }
 
 async function checkBlockchairPayment(order, method) {
@@ -715,15 +728,18 @@ async function checkBlockchairPayment(order, method) {
   }
 
   const data = await response.json()
+  if (!data?.data?.[order.txId]?.transaction) {
+    throw new Error(`${method.name} transaction was not found by the free checker yet.`)
+  }
   const raw = JSON.stringify(data).toLowerCase()
   const addressFound = raw.includes(method.address.toLowerCase())
   const confirmations = parseBlockchairConfirmations(data, order.txId)
   const txTimeMs = parseBlockchairTimeMs(data, order.txId)
   const invoiceTimeMs = Date.parse(order.createdAt)
-  const isNewForInvoice = txTimeMs && invoiceTimeMs
-    ? txTimeMs >= invoiceTimeMs - PAYMENT_GRACE_MS
-    : false
-  const received = parseBlockchairAmount(data, order.txId, method.address, method.decimals)
+  const isNewForInvoice = Boolean(txTimeMs && invoiceTimeMs && txTimeMs >= invoiceTimeMs - PAYMENT_GRACE_MS)
+  const received = method.token
+    ? parseBlockchairAmount(data, order.txId, method.address, method.decimals)
+    : parseBlockchairAmount(data, order.txId, method.address, method.decimals)
   const expected = Number(order.payment.amountCrypto || 0)
   const amountLooksOk = received !== null && received >= expected * 0.985
   const isPaid = addressFound && amountLooksOk && isNewForInvoice && confirmations >= REQUIRED_CONFIRMATIONS
@@ -732,8 +748,8 @@ async function checkBlockchairPayment(order, method) {
     confirmations,
     received,
     txTime: txTimeMs ? new Date(txTimeMs).toISOString() : null,
-    status: isPaid ? 'paid' : (!isNewForInvoice && confirmations > 0 ? 'rejected' : 'confirming'),
-    message: !isNewForInvoice && confirmations > 0
+    status: isPaid ? 'paid' : (!isNewForInvoice && (confirmations > 0 || txTimeMs > 0) ? 'rejected' : 'confirming'),
+    message: !isNewForInvoice && (confirmations > 0 || txTimeMs > 0)
       ? 'This transaction is older than the invoice. Send a new payment for this order.'
       : addressFound && amountLooksOk
       ? `${method.name} transaction detected. Confirmations: ${confirmations}/${REQUIRED_CONFIRMATIONS}.`
@@ -765,6 +781,17 @@ async function checkPayment(order) {
       message: error.message || 'Free blockchain checker is still waiting for this transaction.',
     }
   }
+}
+
+async function authorizeOrder(request, env, order) {
+  const sessionUser = await getSessionUser(request, env)
+  const account = publicUser(sessionUser)
+
+  if (order.discordUserId && order.discordUserId !== account?.id) {
+    return json({ ok: false, message: 'You do not have access to this order.' }, { status: 403 })
+  }
+
+  return null
 }
 
 async function createOrder(request, env, ctx) {
@@ -877,6 +904,11 @@ async function updatePayment(request, env, ctx, orderId) {
     return json({ ok: false, message: 'Order not found.' }, { status: 404 })
   }
 
+  const authorizationError = await authorizeOrder(request, env, order)
+  if (authorizationError) {
+    return authorizationError
+  }
+
   order.txId = short(body?.txId, 180)
 
   if (!order.txId) {
@@ -911,11 +943,16 @@ async function updatePayment(request, env, ctx, orderId) {
   return json({ ok: true, payment: order.paymentStatus, order: publicOrder(order) })
 }
 
-async function getOrderStatus(env, ctx, orderId) {
+async function getOrderStatus(request, env, ctx, orderId) {
   const order = await getOrder(env, orderId)
 
   if (!order) {
     return json({ ok: false, message: 'Order not found.' }, { status: 404 })
+  }
+
+  const authorizationError = await authorizeOrder(request, env, order)
+  if (authorizationError) {
+    return authorizationError
   }
 
   if (order.txId && order.status !== 'paid') {
@@ -984,7 +1021,7 @@ export default {
 
     const statusMatch = url.pathname.match(/^\/api\/orders\/([^/]+)\/status$/)
     if (statusMatch && request.method === 'GET') {
-      return getOrderStatus(env, ctx, statusMatch[1])
+      return getOrderStatus(request, env, ctx, statusMatch[1])
     }
 
     if (request.method === 'OPTIONS') {

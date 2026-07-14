@@ -2,6 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import './App.css'
 import FooterBloxScene from './components/FooterBloxScene.jsx'
 import RocketScene from './components/RocketScene.jsx'
+import CheckoutArtifact from './components/CheckoutArtifact.jsx'
 import { cryptoCurrencies, fallbackCryptoRatesEur, formatCryptoAmount, getCryptoById } from './crypto.jsx'
 
 const baseUrl = import.meta.env.BASE_URL
@@ -846,6 +847,19 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
       return undefined
     }
 
+    const previousOverflow = document.body.style.overflow
+    document.body.style.overflow = 'hidden'
+
+    return () => {
+      document.body.style.overflow = previousOverflow
+    }
+  }, [isOpen])
+
+  useEffect(() => {
+    if (!isOpen) {
+      return undefined
+    }
+
     const ids = cryptoCurrencies.map((currency) => currency.coinGeckoId).join(',')
     const controller = new AbortController()
 
@@ -884,11 +898,15 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
     const interval = window.setInterval(() => {
       fetch(`/api/orders/${order.id}/status`)
-        .then((response) => response.json())
-        .then((data) => {
-          if (data.ok) {
-            setPaymentStatus(data.payment)
+        .then(async (response) => {
+          const data = await response.json().catch(() => ({}))
+          if (!response.ok || !data.ok) {
+            throw new Error(data.message || 'Could not refresh payment status.')
           }
+          return data
+        })
+        .then((data) => {
+          setPaymentStatus(data.payment)
         })
         .catch(() => undefined)
     }, 15000)
@@ -937,7 +955,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
           },
         }),
       })
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok || !data.ok) {
         throw new Error(data.message || 'Could not create order.')
@@ -968,7 +986,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ txId: txId.trim() }),
       })
-      const data = await response.json()
+      const data = await response.json().catch(() => ({}))
 
       if (!response.ok || !data.ok) {
         throw new Error(data.message || 'Could not check payment yet.')
@@ -1082,6 +1100,11 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
               ))}
             </div>
 
+            <div className="payment-artifact-row">
+              <CheckoutArtifact />
+              <p>Secure invoice generated for this checkout. Your payment is checked against the exact network and amount.</p>
+            </div>
+
             <div className="cart-total">
               <span>Total in EUR <strong>{formatPrice(total)}</strong></span>
               <span>Estimated crypto <strong>{formatCryptoAmount(cryptoAmount, selectedPayment.symbol)}</strong></span>
@@ -1142,6 +1165,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
               </div>
 
               <aside className="invoice-qr">
+                <CheckoutArtifact />
                 <img src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${qrData}`} alt="" />
                 <strong>{invoicePayment.symbol}</strong>
                 <span>{invoicePayment.network}</span>
