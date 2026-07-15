@@ -1021,6 +1021,9 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
         {step === 'cart' && (
           <>
+            <div className="cart-panel__artifact" aria-hidden="true">
+              <CheckoutArtifact />
+            </div>
             <div className="cart-panel__head">
               <span className="cart-panel__eyebrow">bloxup checkout</span>
               <h2>Shopping Cart</h2>
