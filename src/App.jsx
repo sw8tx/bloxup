@@ -3,6 +3,7 @@ import './App.css'
 import FooterBloxScene from './components/FooterBloxScene.jsx'
 import RocketScene from './components/RocketScene.jsx'
 import CheckoutArtifact from './components/CheckoutArtifact.jsx'
+import QRCode from 'qrcode'
 import { cryptoCurrencies, fallbackCryptoRatesEur, formatCryptoAmount, getCryptoById } from './crypto.jsx'
 
 const baseUrl = import.meta.env.BASE_URL
@@ -50,17 +51,9 @@ const footerGroups = [
       ['Terms of Service', '/tos'],
       ['Refund Policy', '/refund'],
       ['Privacy Policy', '/privacy'],
+      ['Imprint', '/imprint'],
     ],
   },
-]
-
-const orderEvents = [
-  { platform: 'TikTok', text: 'Mia ordered 500 TikTok Followers', time: 'just now' },
-  { platform: 'YouTube', text: 'Noah ordered 100 YouTube Subscribers', time: '1 min ago' },
-  { platform: 'Roblox', text: 'Luca ordered Roblox Community Members', time: '2 min ago' },
-  { platform: 'Twitch', text: 'Emma ordered 250 Twitch Followers', time: 'just now' },
-  { platform: 'TikTok', text: 'Ava ordered 1,000 TikTok Likes', time: '3 min ago' },
-  { platform: 'YouTube', text: 'Ben ordered YouTube Comments', time: '1 min ago' },
 ]
 
 const servicePricing = {
@@ -81,15 +74,15 @@ const platformServicePricing = {
 }
 
 const serviceDescriptions = {
-  followers: 'Real profile growth delivered at a natural pace, with clean routing and no password required.',
-  subscribers: 'Real channel subscribers delivered steadily, built for clean growth without forcing login access.',
-  'community-member': 'Roblox community members delivered with clean tracking and steady pacing for group growth.',
-  views: 'Views delivered with natural pacing, built to count cleanly without looking like a sudden spike.',
-  likes: 'Real-account likes delivered with controlled pacing to support early engagement signals.',
-  reposts: 'Reposts from real-looking activity streams, paced carefully for stronger distribution signals.',
-  saves: 'Saves delivered steadily to help posts look useful, sticky, and worth coming back to.',
-  shares: 'Shares delivered in clean waves so the post keeps movement without an obvious dump.',
-  comments: 'Custom-looking comment delivery handled with safer pacing and simple order tracking.',
+  followers: 'Choose a quantity, pay the displayed total, and track the order from one simple checkout. No password required.',
+  subscribers: 'A transparent subscriber service with a clear quantity, price, and payment status. No channel password required.',
+  'community-member': 'Community-member delivery with a visible quantity, price, and order status. Keep your community link public while processing.',
+  views: 'A clearly priced view service with the selected quantity shown before checkout. Platform rules and enforcement still apply.',
+  likes: 'A clearly priced like service with the selected quantity shown before checkout. No password or login access is requested.',
+  reposts: 'A transparent repost service with quantity, fee, and delivery status shown before you pay.',
+  saves: 'A transparent save service with quantity, fee, and delivery status shown before you pay.',
+  shares: 'A transparent share service with quantity, fee, and delivery status shown before you pay.',
+  comments: 'A transparent comment service with the target link and final price shown before checkout.',
 }
 
 const servicePages = serviceGroups.reduce((pages, group) => {
@@ -324,6 +317,65 @@ const policyPages = {
           'Privacy requests and questions can be sent to privacy@bloxup.shop or support@bloxup.shop.',
         ],
       },
+    ],
+  },
+}
+
+const infoPages = {
+  '/faq': {
+    eyebrow: 'Support',
+    title: 'Frequently Asked Questions',
+    updated: 'Clear answers before you order',
+    intro: 'Everything important about service selection, delivery, payment, and account safety in one place.',
+    sections: [
+      { title: 'How does an order work?', body: ['Choose a platform service, select the quantity, add your email and target link, then continue to the payment screen. The invoice shows the exact network, wallet address, amount, and order ID.'] },
+      { title: 'Do you need my password?', body: ['No. Never send a social-media password, recovery code, or private login credential. We only ask for the public target link needed for delivery.'] },
+      { title: 'How long does delivery take?', body: ['The start window is shown on the service page and can change with platform availability, payment review, maintenance, or demand. The order status is the source of truth.'] },
+      { title: 'What if a platform removes engagement?', body: ['Third-party platforms control their counts and enforcement. A removal, restriction, or algorithm change is outside our control and is handled under the Refund Policy where applicable.'] },
+      { title: 'Which payment methods are available?', body: ['Crypto payment is currently available. Select the exact network shown in the invoice and send the displayed amount to the displayed address. Sending on another network can permanently lose funds.'] },
+      { title: 'How do I get help?', body: ['Email help@bloxup.shop with your order ID, target link, and a short description. Do not include passwords or recovery codes.'] },
+    ],
+  },
+  '/help': {
+    eyebrow: 'Support',
+    title: 'Help Center',
+    updated: 'Support for orders and payments',
+    intro: 'Need help with a payment, target link, or order status? Send the order ID and the email used at checkout to help@bloxup.shop.',
+    sections: [
+      { title: 'Before contacting support', body: ['Check the invoice network, amount, address, and transaction ID. A transaction sent on the wrong network cannot be recovered by the site.'] },
+      { title: 'Payment not detected', body: ['Make sure the transaction is confirmed on the selected network. Paste the transaction ID into the invoice screen only after sending the exact amount.'] },
+      { title: 'Delivery issue', body: ['Include your order ID, the public target URL, the service, and the quantity. We may ask for an updated public link if the original target changed or became private.'] },
+      { title: 'Contact', body: ['Email help@bloxup.shop. Never send a password, seed phrase, private key, recovery code, or full wallet credentials.'] },
+    ],
+  },
+  '/services': {
+    eyebrow: 'Shop',
+    title: 'All Services',
+    updated: 'Transparent pricing by platform',
+    intro: 'Browse the available TikTok, YouTube, Twitch, and Roblox services. Every product page shows the quantity, unit price, maximum amount, and checkout requirements before you pay.',
+    sections: serviceGroups.map((group) => ({
+      title: group.name,
+      body: group.services.map((service) => `${service}: ${formatPrice(platformServicePricing[`${group.name.toLowerCase()}-${service.toLowerCase().replaceAll(' ', '-')}`] ?? servicePricing[service.toLowerCase()])} per 1,000. Open the product page for the exact quantity range and current details.`),
+    })),
+  },
+  '/content-reward': {
+    eyebrow: 'Community',
+    title: 'Content Reward',
+    updated: 'A future creator program',
+    intro: 'The content reward program is not active yet. We will publish eligibility, reward amounts, and terms here before accepting submissions.',
+    sections: [
+      { title: 'Status', body: ['Coming soon. No submission, payment, or personal data is collected through this page today.'] },
+    ],
+  },
+  '/imprint': {
+    eyebrow: 'Legal',
+    title: 'Imprint',
+    updated: 'Operator information',
+    intro: 'Commercial operator details must be completed before launch. The contact email below is active for support, but it does not replace the legally required name and address.',
+    sections: [
+      { title: 'Operator', body: ['Legal name: [add the registered operator name before launch].', 'Address: [add the complete postal address before launch].'] },
+      { title: 'Contact', body: ['Email: help@bloxup.shop', 'For privacy requests: privacy@bloxup.shop'] },
+      { title: 'Platform relationships', body: ['bloxup.shop is independent and is not owned by, endorsed by, or officially partnered with TikTok, YouTube, Twitch, Roblox, or any other platform unless stated in writing.'] },
     ],
   },
 }
@@ -563,6 +615,80 @@ function Header({ cartCount, onCartOpen, onOrdersOpen }) {
   )
 }
 
+function HomePage() {
+  const bestsellers = [
+    { platform: 'TikTok', service: 'Followers', amount: 1000, price: 3 },
+    { platform: 'YouTube', service: 'Subscribers', amount: 1000, price: 5 },
+    { platform: 'Twitch', service: 'Followers', amount: 1000, price: 1 },
+  ]
+
+  return (
+    <main className="home-page">
+      <section className="home-hero" aria-labelledby="home-title">
+        <RocketScene />
+        <div className="home-hero__copy">
+          <span className="home-hero__eyebrow">bloxup / social services</span>
+          <h1 id="home-title">Boost your social presence.</h1>
+          <p>Fast, simple, transparent. Choose a service, see the full price, and track your order without sharing a password.</p>
+          <div className="home-hero__actions">
+            <a className="home-button home-button--primary" href="/services">Explore services</a>
+            <a className="home-button home-button--secondary" href="#how-it-works">How it works</a>
+          </div>
+          <p className="home-hero__notice">No password required. Platform rules and enforcement still apply.</p>
+        </div>
+      </section>
+
+      <section className="home-section home-section--services" aria-labelledby="popular-title">
+        <div className="home-section__heading">
+          <span className="home-hero__eyebrow">Start here</span>
+          <h2 id="popular-title">Popular services</h2>
+          <p>Clear unit pricing, quantity controls, and an exact total before checkout.</p>
+        </div>
+        <div className="home-service-grid">
+          {bestsellers.map((item) => (
+            <a className="home-service-card" href={servicePath(item.platform, item.service)} key={`${item.platform}-${item.service}`}>
+              <span className="home-service-card__icon"><PlatformIcon platform={item.platform} /></span>
+              <span className="home-service-card__platform">{item.platform}</span>
+              <strong>{item.service}</strong>
+              <span className="home-service-card__price">{formatPrice(item.price)} / 1k</span>
+              <span className="home-service-card__link">View service <span aria-hidden="true">→</span></span>
+            </a>
+          ))}
+        </div>
+        <div className="home-platform-row" aria-label="Supported platforms">
+          {serviceGroups.map((group) => (
+            <a href={servicePath(group.name, group.services[0])} key={group.name}>
+              <PlatformIcon platform={group.name} />
+              {group.name}
+            </a>
+          ))}
+        </div>
+      </section>
+
+      <section className="home-section home-section--steps" id="how-it-works" aria-labelledby="steps-title">
+        <div className="home-section__heading">
+          <span className="home-hero__eyebrow">Simple by design</span>
+          <h2 id="steps-title">How it works</h2>
+        </div>
+        <div className="home-steps">
+          <article><span>01</span><h3>Pick a service</h3><p>Choose a platform and set the exact amount you want.</p></article>
+          <article><span>02</span><h3>Enter your link</h3><p>Use a public profile, post, video, or community link. Never share a password.</p></article>
+          <article><span>03</span><h3>Track the order</h3><p>Pay on the shown network and follow payment status from your invoice.</p></article>
+        </div>
+      </section>
+
+      <section className="home-section home-section--faq" aria-labelledby="faq-title">
+        <div className="home-section__heading">
+          <span className="home-hero__eyebrow">Need to know</span>
+          <h2 id="faq-title">Questions before checkout?</h2>
+          <p>Read the delivery, payment, and platform-safety details before placing an order.</p>
+        </div>
+        <a className="home-button home-button--secondary" href="/faq">Open the FAQ</a>
+      </section>
+    </main>
+  )
+}
+
 function Footer() {
   return (
     <footer className="site-footer" id="footer">
@@ -574,10 +700,7 @@ function Footer() {
           </a>
           <FooterBloxScene />
         </div>
-        <p>
-          Premium social boosts for every platform - high quality, instantly delivered and no risk of being banned.
-          Satisfaction is guaranteed.
-        </p>
+        <p>Transparent social services for TikTok, YouTube, Twitch, and Roblox. Clear pricing, no password requests, and order status in one place.</p>
         <span className="footer-brand__copyright">2026 bloxup. All rights reserved.</span>
       </div>
 
@@ -592,66 +715,6 @@ function Footer() {
         ))}
       </div>
     </footer>
-  )
-}
-
-function OrderNotifications() {
-  const [isDismissed, setIsDismissed] = useState(() => (
-    window.localStorage.getItem('bloxup-order-toast-dismissed') === 'true'
-  ))
-  const [notice, setNotice] = useState(() => ({
-    id: 0,
-    ...orderEvents[0],
-  }))
-
-  useEffect(() => {
-    if (isDismissed) {
-      return undefined
-    }
-
-    const showNextNotice = () => {
-      setNotice((current) => {
-        let nextIndex = Math.floor(Math.random() * orderEvents.length)
-        if (orderEvents[nextIndex].text === current.text) {
-          nextIndex = (nextIndex + 1) % orderEvents.length
-        }
-
-        return {
-          id: current.id + 1,
-          ...orderEvents[nextIndex],
-        }
-      })
-    }
-
-    const firstTimer = window.setTimeout(showNextNotice, 1400)
-    const interval = window.setInterval(showNextNotice, 5600)
-
-    return () => {
-      window.clearTimeout(firstTimer)
-      window.clearInterval(interval)
-    }
-  }, [isDismissed])
-
-  const dismissNotice = () => {
-    window.localStorage.setItem('bloxup-order-toast-dismissed', 'true')
-    setIsDismissed(true)
-  }
-
-  if (isDismissed) {
-    return null
-  }
-
-  return (
-    <div className="order-toast" key={notice.id} role="status" aria-live="polite">
-      <span className="order-toast__icon">
-        <PlatformIcon platform={notice.platform} />
-      </span>
-      <span className="order-toast__text">{notice.text}</span>
-      <span className="order-toast__time">{notice.time}</span>
-      <button className="order-toast__close" type="button" aria-label="Dismiss notification" onClick={dismissNotice}>
-        <span aria-hidden="true">x</span>
-      </button>
-    </div>
   )
 }
 
@@ -729,15 +792,16 @@ function ProductPage({ page, onAddToCart }) {
           <article className="quality-card quality-card--active">
             <span className="quality-card__check">✓</span>
             <div>
-              <h2>High Quality {page.service}</h2>
-              <p>Affordable {unitLabel} with clean delivery, live tracking, and reliable pacing.</p>
+              <h2>{page.service} details</h2>
+              <p>Choose the quantity, review the full price, and follow the order status from checkout.</p>
               <ul>
-                <li>Real users and clean routing</li>
-                <li>Start time: 0-2 hours</li>
-                <li>Auto-refill when available</li>
-                <li>Live order tracking</li>
-                <li>Delivery guarantee</li>
+                <li>Minimum: 1,000 {unitLabel}</li>
+                <li>Maximum: {formatAmount(maxAmount)} {unitLabel}</li>
+                <li>Start window shown before checkout</li>
+                <li>Payment status on the invoice</li>
+                <li>Refund review if delivery fails</li>
                 <li>No password required</li>
+                <li>Platform rules still apply</li>
               </ul>
             </div>
           </article>
@@ -745,8 +809,8 @@ function ProductPage({ page, onAddToCart }) {
           <article className="quality-card">
             <span className="quality-card__circle" />
             <div>
-              <h2>Exclusive {page.service}</h2>
-              <p>Hand-picked priority delivery with stronger retention. Coming soon.</p>
+              <h2>Delivery notes</h2>
+              <p>Start time and completion depend on platform availability, payment confirmation, and the target remaining public.</p>
             </div>
           </article>
         </div>
@@ -805,9 +869,9 @@ function ProductPage({ page, onAddToCart }) {
           <button className="add-cart-button" type="button" onClick={addCurrentItemToCart}>+ Add to cart</button>
 
           <div className="trust-row">
-            <span>250 purchases in the last 24 hours</span>
-            <span>Starts within 90 seconds</span>
-            <span>86% buy more than once</span>
+            <span>No password requests</span>
+            <span>Exact quantity and price shown</span>
+            <span>Support: help@bloxup.shop</span>
           </div>
         </div>
       </section>
@@ -817,30 +881,28 @@ function ProductPage({ page, onAddToCart }) {
 
 function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
   const [step, setStep] = useState('cart')
-  const [promoCode, setPromoCode] = useState('')
   const [selectedPaymentId, setSelectedPaymentId] = useState('ethereum')
   const [rates, setRates] = useState(fallbackCryptoRatesEur)
   const [customer, setCustomer] = useState({ email: '', discord: '', target: '' })
+  const [hasCheckoutConsent, setHasCheckoutConsent] = useState(false)
   const [order, setOrder] = useState(null)
   const [txId, setTxId] = useState('')
   const [paymentStatus, setPaymentStatus] = useState(null)
+  const [qrSrc, setQrSrc] = useState('')
   const [checkoutError, setCheckoutError] = useState('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
   const selectedPayment = getCryptoById(selectedPaymentId)
   const subtotal = items.reduce((sum, item) => sum + item.price, 0)
-  const rawDiscount = promoCode.trim().toUpperCase() === 'TEST' ? subtotal * 0.999 : 0
-  const payable = promoCode.trim().toUpperCase() === 'TEST' && subtotal > 0
-    ? Math.max(0.01, subtotal - rawDiscount)
-    : Math.max(0, subtotal - rawDiscount)
-  const discount = subtotal - payable
+  const discount = 0
+  const payable = subtotal
   const fee = payable * selectedPayment.feeRate
   const total = payable + fee
   const cryptoAmount = total / (rates[selectedPayment.id] || fallbackCryptoRatesEur[selectedPayment.id] || 1)
   const invoicePayment = order?.payment || selectedPayment
   const invoiceCryptoAmount = Number(invoicePayment.amountCrypto || cryptoAmount)
   const invoiceAmountLabel = invoicePayment.amountLabel || formatCryptoAmount(invoiceCryptoAmount, invoicePayment.symbol)
-  const canCheckout = items.length > 0 && customer.email.trim() && customer.discord.trim() && customer.target.trim()
+  const canCheckout = items.length > 0 && customer.email.trim() && customer.target.trim() && hasCheckoutConsent
 
   useEffect(() => {
     if (!isOpen) {
@@ -914,6 +976,35 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
     return () => window.clearInterval(interval)
   }, [order?.id, paymentStatus?.status])
 
+  useEffect(() => {
+    if (step !== 'invoice' || !invoicePayment.address || !invoiceCryptoAmount) {
+      setQrSrc('')
+      return undefined
+    }
+
+    let isActive = true
+    QRCode.toDataURL(`${invoicePayment.address}?amount=${invoiceCryptoAmount}`, {
+      width: 190,
+      margin: 1,
+      errorCorrectionLevel: 'M',
+      color: { dark: '#071006', light: '#ffffff' },
+    })
+      .then((dataUrl) => {
+        if (isActive) {
+          setQrSrc(dataUrl)
+        }
+      })
+      .catch(() => {
+        if (isActive) {
+          setQrSrc('')
+        }
+      })
+
+    return () => {
+      isActive = false
+    }
+  }, [invoiceCryptoAmount, invoicePayment.address, step])
+
   if (!isOpen) {
     return null
   }
@@ -924,7 +1015,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
   const createOrder = async () => {
     if (!canCheckout) {
-      setCheckoutError('Enter email, Discord username, and the profile/video link first.')
+      setCheckoutError('Enter your email and the profile/video link first.')
       return
     }
 
@@ -938,7 +1029,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
         body: JSON.stringify({
           items,
           customer,
-          promoCode: promoCode.trim().toUpperCase(),
+          consent: hasCheckoutConsent,
           subtotal,
           discount,
           fee,
@@ -1007,7 +1098,6 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
     void navigator.clipboard?.writeText(value)
   }
 
-  const qrData = encodeURIComponent(`${invoicePayment.address}?amount=${invoiceCryptoAmount}`)
   const invoiceStatus = paymentStatus?.status === 'paid'
     ? 'Order received. Thank you for your order.'
     : paymentStatus?.txId
@@ -1051,16 +1141,16 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
                 <input value={customer.email} onChange={(event) => updateCustomer('email', event.target.value)} type="email" placeholder="you@example.com" />
               </label>
               <label>
-                Discord username
+                Discord username (optional)
                 <input value={customer.discord} onChange={(event) => updateCustomer('discord', event.target.value)} placeholder="@username or user id" />
               </label>
               <label>
                 Profile / video link
                 <input value={customer.target} onChange={(event) => updateCustomer('target', event.target.value)} placeholder="https://..." />
               </label>
-              <label>
-                Code
-                <input value={promoCode} onChange={(event) => setPromoCode(event.target.value)} placeholder="TEST" />
+              <label className="cart-consent">
+                <input checked={hasCheckoutConsent} onChange={(event) => setHasCheckoutConsent(event.target.checked)} type="checkbox" />
+                <span>I agree to the <a href="/tos">Terms</a> and understand that platform rules and enforcement still apply. I request delivery to begin after payment confirmation.</span>
               </label>
             </div>
 
@@ -1169,7 +1259,7 @@ function CartOverlay({ items, isOpen, onClose, onRemoveItem, onClearCart }) {
 
               <aside className="invoice-qr">
                 <CheckoutArtifact />
-                <img src={`https://api.qrserver.com/v1/create-qr-code/?size=190x190&data=${qrData}`} alt="" />
+                {qrSrc ? <img src={qrSrc} alt="Payment QR code" /> : <span className="invoice-qr__loading">Preparing QR code…</span>}
                 <strong>{invoicePayment.symbol}</strong>
                 <span>{invoicePayment.network}</span>
               </aside>
@@ -1443,6 +1533,7 @@ function PolicyPage({ page }) {
 function App() {
   const route = window.location.pathname.toLowerCase()
   const policyPage = policyPages[route]
+  const infoPage = infoPages[route]
   const productPage = servicePages[route]
   const isAuthPage = route === '/sign-in' || route === '/sign-up'
   const [isRouteLoading, setIsRouteLoading] = useState(false)
@@ -1455,6 +1546,27 @@ function App() {
   })
   const [isCartOpen, setIsCartOpen] = useState(route === '/cart')
   const [isOrdersOpen, setIsOrdersOpen] = useState(route === '/orders')
+
+  useEffect(() => {
+    const title = productPage
+      ? `Buy ${productPage.platform} ${productPage.service} | bloxup.shop`
+      : policyPage?.title || infoPage?.title || 'Social Media Growth Services | bloxup.shop'
+    const description = productPage?.description
+      || policyPage?.intro
+      || infoPage?.intro
+      || 'Explore transparent social media services for TikTok, YouTube, Twitch, and Roblox. Clear pricing, no password requests, and order tracking.'
+    const canonicalUrl = `https://bloxup.shop${route === '/' ? '/' : route}`
+
+    document.title = title
+    const descriptionMeta = document.querySelector('meta[name="description"]')
+    descriptionMeta?.setAttribute('content', description)
+    const ogTitle = document.querySelector('meta[property="og:title"]')
+    ogTitle?.setAttribute('content', title)
+    const ogDescription = document.querySelector('meta[property="og:description"]')
+    ogDescription?.setAttribute('content', description)
+    const canonical = document.querySelector('link[rel="canonical"]')
+    canonical?.setAttribute('href', canonicalUrl)
+  }, [infoPage, policyPage, productPage, route])
 
   useEffect(() => {
     window.localStorage.setItem('bloxup-cart', JSON.stringify(cartItems))
@@ -1509,13 +1621,12 @@ function App() {
         <ProductPage page={productPage} onAddToCart={addToCart} />
       ) : policyPage ? (
         <PolicyPage page={policyPage} />
+      ) : infoPage ? (
+        <PolicyPage page={infoPage} />
       ) : (
-        <main className="rocket-only" aria-label="Bloxup rocket rendered in 3D">
-          <RocketScene />
-        </main>
+        <HomePage />
       )}
       <Footer />
-      <OrderNotifications />
       <CartOverlay
         items={cartItems}
         isOpen={isCartOpen}

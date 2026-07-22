@@ -815,12 +815,9 @@ async function createOrder(request, env, ctx) {
   }
 
   const subtotal = money(items.reduce((sum, item) => sum + item.price, 0))
-  const promoCode = short(body.promoCode, 40).toUpperCase()
-  const rawDiscount = promoCode === 'TEST' ? money(subtotal * 0.999) : 0
-  const payable = promoCode === 'TEST' && subtotal > 0
-    ? Math.max(0.01, money(subtotal - rawDiscount))
-    : Math.max(0, money(subtotal - rawDiscount))
-  const discount = money(subtotal - payable)
+  const promoCode = ''
+  const payable = subtotal
+  const discount = 0
   const fee = money(payable * 0.03)
   const total = money(payable + fee)
   const cryptoRate = await getCryptoRateEur(body.payment.id, method)
@@ -838,6 +835,7 @@ async function createOrder(request, env, ctx) {
       discord: short(body.customer?.discord, 240),
       target: short(body.customer?.target, 900),
     },
+    consentAt: body.consent === true ? new Date().toISOString() : null,
     promoCode,
     subtotal,
     discount,
@@ -860,8 +858,8 @@ async function createOrder(request, env, ctx) {
     },
   }
 
-  if (!order.customer.email || !order.customer.discord || !order.customer.target) {
-    return json({ ok: false, message: 'Email, Discord, and target link are required.' }, { status: 400 })
+  if (!order.customer.email || !order.customer.target || !order.consentAt) {
+    return json({ ok: false, message: 'Email, target link, and checkout consent are required.' }, { status: 400 })
   }
 
   await saveOrder(env, order)
